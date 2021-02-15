@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           14.02.2021
+\date           15.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -379,7 +379,8 @@ argProcResult potoroo::argProc(ArgList& args)
         else return argProcResult::error;
     }
 
-    return potoroo::argProcJF(args, std::string());
+    string jfErrMsg = "";
+    return potoroo::argProcJF(args, jfErrMsg);
 }
 
 argProcResult potoroo::argProcJF(const ArgList& args, std::string& errMsg)
