@@ -1,5 +1,7 @@
 # a comment
 
+-if abc.bat -od .
+
 -if "./a dir/asdf.ext"  	  -od ../../000	-Werror
 -if "./a dir/asdf.ext"  	  -of ./ptro	-Werror -t cpp        
 

@@ -6,7 +6,7 @@ Supported line endings: `LF` and `CR+LF`
 
 ## exapmles
 
-See <./test/system/processor_test.potorooJobs> and <./test/system/processor_test_src>
+See [./test/system/processor_test.potorooJobs](./test/system/processor_test.potorooJobs) and [./test/system/processor_test_src](./test/system/processor_test_src)
 
 ## cli arguments
 
@@ -23,7 +23,7 @@ potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [-Werror]
 | `-od DIR` | output directory (same filename) |
 | `-t TAG` | specifies the tag |
 | `--force-jf` | force jobfile to be processed even if errors occured while parsing it |
-| `-Werror` | handles warnings as errors. Results in not writing the output file if any warning occured |
+| `-Werror` | handles warnings as errors (only in processor, the jobfile parser is unaffected by this flag). Results in not writing the output file if any warning occured. |
 | `-h`, `--help` | print help |
 | `-v`, `--version` | print version |
 
