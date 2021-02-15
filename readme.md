@@ -6,7 +6,7 @@ Supported line endings: `LF` and `CR+LF`
 
 ## exapmles
 
-See [test/system/processor_test.potorooJobs](./blob/master/test/system/processor_test.potorooJobs) and [test/system/processor_test_src/](./blob/master/test/system/processor_test_src)
+See <./test/system/processor_test.potorooJobs> and <./test/system/processor_test_src>
 
 ## cli arguments
 
