@@ -1,0 +1,9 @@
+#
+# author        Oliver Blaser
+# date          15.02.2021
+# copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
+#
+
+-if ./processor_test_src/index.html     -od ./processor_test_deploy     -t custom:<!--ptro
+-if processor_test_src/js/index.js      -od processor_test_deploy
+#-if processor_test_src/js/jQuery.js     -od processor_test_deploy       --copy # future feature

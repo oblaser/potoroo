@@ -4,6 +4,9 @@ A script preprocessor, which enables you to use kind of compile switches in scri
 
 Supported line endings: `LF` and `CR+LF`
 
+## exapmles
+
+See [test/system/processor_test.potorooJobs](./blob/master/test/system/processor_test.potorooJobs) and [test/system/processor_test_src/](./blob/master/test/system/processor_test_src)
 
 ## cli arguments
 
@@ -12,19 +15,19 @@ potoroo [-jf FILE] [--force-jf]
 potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [-Werror]
 ```
 
-|||
----|---
-`-jf FILE` | to specify a jobfile
-`-if FILE` | input file
-`-of FILE` | output file
-`-od DIR` | output directory (same filename)
-`-t TAG` | specifies the tag
-`--force-jf` | force jobfile to be processed even if errors occured while parsing it
-`-Werror` | handles warnings as errors. Results in not writing the output file if any warning occured
-`-h`, `--help` | print help
-`-v`, `--version` | print version
+| arg | description |
+|:---|:---|
+| `-jf FILE` | to specify a jobfile |
+| `-if FILE` | input file |
+| `-of FILE` | output file |
+| `-od DIR` | output directory (same filename) |
+| `-t TAG` | specifies the tag |
+| `--force-jf` | force jobfile to be processed even if errors occured while parsing it |
+| `-Werror` | handles warnings as errors. Results in not writing the output file if any warning occured |
+| `-h`, `--help` | print help |
+| `-v`, `--version` | print version |
 
-If no parameter is provided the default jobfile "./potorooJobs" is processed.
+If no parameter or only `--force-jf` is provided the default jobfile "./potorooJobs" is processed.
 
 
 ## jobfile
@@ -38,14 +41,14 @@ Each line is interpreted as a job.
 ```
 
 
-## tags (-t)
+## tags (-t TAG)
 
-TAG | Tag string in file
----|---
-cpp | //#p
-bash | #//p
-batch | @rem #p
-custom:CTAG | CTAG
+| TAG | tag string in file |
+|:---|:---|
+| cpp | //#p |
+| bash | #//p |
+| batch | @rem #p |
+| custom:CTAG | CTAG |
 
 
 ## preprocessor directives

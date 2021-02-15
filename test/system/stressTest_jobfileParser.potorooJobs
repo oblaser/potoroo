@@ -1,0 +1,14 @@
+# a comment
+
+-if "./a dir/asdf.ext"  	  -od ../../000	-Werror
+-if "./a dir/asdf.ext"  	  -of ./ptro	-Werror -t cpp        
+
+-if "./a dir/asdf.ext" -of ./ptro -t cpp # another comment
+-if "./a dir/asdf.ext" -of# ./ptro -t cpp       this comment breaks the parsing
+
+    -if "./a dir/asdf.ext"  	  -od ../../000	-Werror -t custom:"*p
+	-if "./a dir/asdf.ext" -od ../../000 -Werror -t custom:"*p
+-if index.js -od ./deploy
+-if index.js -od ./deploy -of a
+-if ./sdf/ -od . -t batch
+-if "a file" -od outDir
