@@ -273,7 +273,7 @@ ArgList potoroo::ArgList::parse(int argc, const char* const* argv)
     }
 
 
-#if (PRJ_DEBUG && 0)
+#if PRJ_DEBUG && 0
     cout << "\nArgList dump:\n" << list.dbgDump() << endl;
 #endif
 
@@ -329,9 +329,9 @@ ArgList potoroo::ArgList::parse(const char* args)
     *argv = new char[1];
     **argv = 0;
 
-#if (PRJ_DEBUG && 0)
+#if PRJ_DEBUG && 0
     cout << "parse args from string\n" << args << endl;
-#define _CLIARG_DBG_DUMP_ (1)
+#define ___DBG_ARG_PARSE_DUMP (1)
 #endif
 
     for (int i = 1; i < argc; ++i)
@@ -341,8 +341,10 @@ ArgList potoroo::ArgList::parse(const char* args)
         for (int j = 0; j < list[i - 1].size(); ++j) *((*(argv + i)) + j) = list[i - 1][j];
         //copy(list[i - 1].begin(), list[i - 1].end(), *(argv + i));
 
-#if (PRJ_DEBUG && _CLIARG_DBG_DUMP_)
+#if PRJ_DEBUG
+#ifdef ___DBG_ARG_PARSE_DUMP
         cout << i << "  \"" << *(argv + i) << "\"" << endl;;
+#endif
 #endif
     }
 

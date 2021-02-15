@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           14.02.2021
+\date           15.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include "job.h"
 #include "middleware/cliTextFormat.h"
@@ -489,4 +490,74 @@ Job potoroo::Job::parseArgs(const ArgList& args)
     try { return Job(inPath.string(), out, tag, args.contains(argType::wError)); }
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
+}
+
+
+
+
+
+
+
+Result potoroo::changeWD(const std::string& jobfile)
+{
+    int r = 1;
+    const string procStr = "change working dir";
+
+#if PRJ_DEBUG && 0
+    {
+        ofstream f;
+        f.open("000_cwd_before");
+        f << "000_cwdTest" << endl;
+        f.close();
+    }
+#define ___DBG_JOB_CWD_CREATEFILE (1)
+#endif
+
+    try
+    {
+        fs::current_path(fs::path(jobfile).parent_path());
+        r = 0;
+    }
+    catch (fs::filesystem_error& ex)
+    {
+        ostringstream p1;
+        ostringstream p2;
+        p1 << ex.path1(); // two double quouts are added
+        p2 << ex.path2();
+
+        string path1(p1.str());
+        string path2(p2.str());
+        string path = "";
+
+        if ((path1.length() >= 2) || (path2.length() >= 2))
+        {
+            path += "\n";
+            if (path2.length() == 2) path += "path: " + path1;
+            else path += "path1: " + path1 + "\npath2: " + path2;
+        }
+
+        printError(procStr, ex.what() + path);
+    }
+    catch (exception& ex)
+    {
+        printError(procStr, ex.what());
+    }
+    catch (...)
+    {
+        printError(procStr, "unknown");
+    }
+
+#if PRJ_DEBUG
+#ifdef ___DBG_JOB_CWD_CREATEFILE
+    if (r == 0)
+    {
+        ofstream f;
+        f.open("000_cwd_after");
+        f << "000_cwdTest" << endl;
+        f.close();
+    }
+#endif
+#endif
+
+    return r;
 }

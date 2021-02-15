@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           14.02.2021
+\date           15.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -79,6 +79,8 @@ namespace potoroo
         static Result parseFile(const std::string& filename, std::vector<Job>& jobs);
         static Job parseArgs(const ArgList& args);
     };
+
+    Result changeWD(const std::string& jobfile);
 }
 
 #endif // _JOB_H_

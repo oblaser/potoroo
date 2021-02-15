@@ -77,6 +77,8 @@ potoroo::Result potoroo::processJob(const Job& job)
 
     if (job.warningAsError()) printInfo(ewiFile, "\"Werror\" not yet implemented, has no effect");
 
+    // check if in and out are not fs::equvalent()
+
     // open streams
 
     // process
@@ -106,7 +108,11 @@ potoroo::Result potoroo::processJobs(const std::vector<Job>& jobs)
     cout << "===============" << endl;
 #endif
 
+    string iFile;
+    string oFile;
     Result pr;
+
+
 
     for (size_t i = 0; i < jobs.size(); ++i)
     {

@@ -6,7 +6,7 @@ Supported line endings: `LF` and `CR+LF`
 
 ## exapmles
 
-See [./test/system/processor_test.potorooJobs](./test/system/processor_test.potorooJobs) and [./test/system/processor_test_src](./test/system/processor_test_src)
+See [processor_test.potorooJobs](./test/system/processor_test.potorooJobs) and [processor_test_src](./test/system/processor_test_src)
 
 ## cli arguments
 
@@ -17,22 +17,22 @@ potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [-Werror]
 
 | arg | description |
 |:---|:---|
-| `-jf FILE` | to specify a jobfile |
-| `-if FILE` | input file |
-| `-of FILE` | output file |
-| `-od DIR` | output directory (same filename) |
-| `-t TAG` | specifies the tag |
-| `--force-jf` | force jobfile to be processed even if errors occured while parsing it |
-| `-Werror` | handles warnings as errors (only in processor, the jobfile parser is unaffected by this flag). Results in not writing the output file if any warning occured. |
-| `-h`, `--help` | print help |
-| `-v`, `--version` | print version |
+| `-jf FILE` | Specify a jobfile |
+| `--force-jf` | Force jobfile to be processed even if errors occured while parsing it |
+| `-if FILE` | Input file |
+| `-of FILE` | Output file |
+| `-od DIR` | Output directory (same filename) |
+| `-t TAG` | Specify the tag |
+| `-Werror` | Handles warnings as errors (only in processor, the jobfile parser is unaffected by this flag). Results in not writing the output file if any warning occured. |
+| `-h`, `--help` | Print help |
+| `-v`, `--version` | Print version |
 
 If no parameter or only `--force-jf` is provided the default jobfile "./potorooJobs" is processed.
 
 
 ## jobfile
 
-Each line is interpreted as a job.
+Each line is interpreted as a job. Paths in the jobfile are relative to its containing directory.
 
 ```
 # comments are possible
@@ -45,10 +45,10 @@ Each line is interpreted as a job.
 
 | TAG | tag string in file |
 |:---|:---|
-| cpp | //#p |
-| bash | #//p |
-| batch | @rem #p |
-| custom:CTAG | CTAG |
+| `cpp` | `//#p` |
+| `bash` | `#//p` |
+| `batch` | `@rem #p` |
+| `custom:CTAG` | `CTAG` |
 
 
 ## preprocessor directives
