@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 author         Oliver Blaser
 date           15.02.2021

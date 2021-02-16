@@ -114,7 +114,7 @@ int main(int argc, char** argv)
     Arg a;
 
     a = Arg("-jf");
-    //a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
+    a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
     a.setValue("../../../test/system/processor_test.potorooJobs");
     args.add(a);
 

@@ -9,6 +9,7 @@
 #ifndef _JOB_H_
 #define _JOB_H_
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -81,6 +82,8 @@ namespace potoroo
     };
 
     Result changeWD(const std::string& jobfile);
+
+    std::string fsExceptionPath(const std::filesystem::filesystem_error& ex);
 }
 
 #endif // _JOB_H_

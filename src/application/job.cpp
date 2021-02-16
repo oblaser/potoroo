@@ -319,8 +319,14 @@ potoroo::Job::Job()
 }
 
 potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError)
-    : inFile(inputFile), outFile(outputFile), tag(tag), wError(warningAsError), validity(true)
+    : tag(tag), wError(warningAsError), validity(true)
 {
+    try { inFile = fs::path(inputFile).lexically_normal().string(); }
+    catch (...) { inFile = string(inputFile); }
+
+    try { outFile = fs::path(outputFile).lexically_normal().string(); }
+    catch (...) { outFile = string(outputFile); }
+
     errorMsg.clear();
     errorMsg.shrink_to_fit();
 }
@@ -498,6 +504,9 @@ Job potoroo::Job::parseArgs(const ArgList& args)
 
 
 
+//! @brief Change working dir to process jobfile
+//! @param jobfile 
+//! @return 0 on success
 Result potoroo::changeWD(const std::string& jobfile)
 {
     int r = 1;
@@ -520,23 +529,11 @@ Result potoroo::changeWD(const std::string& jobfile)
     }
     catch (fs::filesystem_error& ex)
     {
-        ostringstream p1;
-        ostringstream p2;
-        p1 << ex.path1(); // two double quouts are added
-        p2 << ex.path2();
-
-        string path1(p1.str());
-        string path2(p2.str());
-        string path = "";
-
-        if ((path1.length() >= 2) || (path2.length() >= 2))
-        {
-            path += "\n";
-            if (path2.length() == 2) path += "path: " + path1;
-            else path += "path1: " + path1 + "\npath2: " + path2;
-        }
-
-        printError(procStr, ex.what() + path);
+#if PRJ_DEBUG
+        printError(procStr, ex.what());
+#else
+        printError(procStr, ex.code().message() + fsExceptionPath(ex));
+#endif
     }
     catch (exception& ex)
     {
@@ -560,4 +557,19 @@ Result potoroo::changeWD(const std::string& jobfile)
 #endif
 
     return r;
+}
+
+std::string potoroo::fsExceptionPath(const std::filesystem::filesystem_error& ex)
+{
+    string path1 = ex.path1().string();
+    string path2 = ex.path2().string();
+    string path = "";
+
+    if ((path1.length() >= 0) || (path2.length() >= 0))
+    {
+        if (path2.length() == 0) path += " \"" + path1 + "\"";
+        else path += "\npath1: \"" + path1 + "\"\npath2: \"" + path2 + "\"";
+    }
+
+    return path;
 }

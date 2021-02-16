@@ -4,6 +4,22 @@
 # copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 #
 
+
+
+#
+# productive, test processor in files
+#
+
 -if ./processor_test_src/index.html     -od ./processor_test_deploy     -t custom:<!--ptro
 -if processor_test_src/js/index.js      -od processor_test_deploy
 #-if processor_test_src/js/jQuery.js     -od processor_test_deploy       --copy # future feature
+
+
+#
+# invalid files
+#
+
+-if processor_test_src/utf16.php        -od ./processor_test_deploy
+
+# to test if the file does not get overwritten:
+-if processor_test_src/index.html       -od processor_test_src            -t cpp
