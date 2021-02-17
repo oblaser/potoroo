@@ -137,7 +137,6 @@ namespace
                 argl.line = line;
 
                 while (
-                    (*p != jfcc) &&
                     (*p != 0x0A) &&
                     ((*p != 0x0D) || (*(p + 1) != 0x0A)) &&
                     (p < (end - 1))
@@ -490,10 +489,7 @@ Job potoroo::Job::parseArgs(const ArgList& args)
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
 
-    if (args.get(argType::tag).getValue().compare(0, 7, "custom:") == 0)
-    {
-        tag = string(args.get(argType::tag).getValue(), 7);
-    }
+    if (args.get(argType::tag).getValue().compare(0, 7, "custom:") == 0) tag = string(args.get(argType::tag).getValue(), 7);
     else if (tagCondCpp(ext) || (args.get(argType::tag).getValue() == "cpp")) tag = tagCpp;
     else if (tagCondBash(ext) || (args.get(argType::tag).getValue() == "bash")) tag = tagBash;
     else if (tagCondBatch(ext) || (args.get(argType::tag).getValue() == "batch")) tag = tagBatch;
