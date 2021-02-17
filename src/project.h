@@ -1,7 +1,7 @@
 /*
 
 \author         Oliver Blaser
-\date           07.02.2021
+\date           17.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -14,8 +14,6 @@
 namespace project
 {
     const Version version(0, 1, 0);
-
-    const int customTagMaxLen = 15;
 }
 
 

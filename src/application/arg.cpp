@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           15.02.2021
+\date           17.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -70,7 +70,7 @@ namespace
         if (!args.containsInvalid()) cond |= (1 << 1);
         else
         {
-            if (err) errMsg += " | ";
+            if (err) errMsg += ", ";
             errMsg += "invalid argument";
             ++err;
         }
@@ -398,7 +398,7 @@ argProcResult potoroo::argProcJF(const ArgList& args, std::string& errMsg)
     if (argProcJF_cond_out(args)) cond |= (1 << 1);
     else
     {
-        if (err) errMsg += " | ";
+        if (err) errMsg += ", ";
         errMsg += "invalid output";
         ++err;
     }
@@ -406,7 +406,7 @@ argProcResult potoroo::argProcJF(const ArgList& args, std::string& errMsg)
     if (argProcJF_cond_tag(args)) cond |= (1 << 2);
     else
     {
-        if (err) errMsg += " | ";
+        if (err) errMsg += ", ";
         errMsg += "invalid tag";
         ++err;
     }
@@ -416,7 +416,7 @@ argProcResult potoroo::argProcJF(const ArgList& args, std::string& errMsg)
     if (argProcJF_cond_misc(args, errMsgMisc)) cond |= (1 << 3);
     else
     {
-        if (err) errMsg += " | ";
+        if (err) errMsg += ", ";
         errMsg += errMsgMisc;
         ++err;
     }

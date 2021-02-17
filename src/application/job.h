@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           15.02.2021
+\date           17.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -35,6 +35,7 @@ namespace potoroo
         Result operator+(const Result& summand);
         Result& operator+=(const Result& summand);
         friend bool operator>(const Result& left, int right);
+        friend bool operator==(const Result& left, int right);
         friend std::ostream& operator<<(std::ostream& os, const Result& v);
     };
 

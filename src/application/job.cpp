@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           15.02.2021
+\date           17.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -95,7 +95,9 @@ namespace
         size_t line = 1;
         const char* p = data;
 
-        while (p < (end - 1)) // end-1 to make clean CRLR checks
+        // end-1 to make clean CRLR checks, needs the file to be terminated
+        // with unimportent data (such as LF, comments or whitespace)
+        while (p < (end - 1))
         {
             // skip whitespace
             while (((*p == 0x09) || (*p == 0x20)) && (p < (end - 1))) ++p;
@@ -207,13 +209,13 @@ namespace
             catch (...) { printWarning(procStr, "closing file failed"); ++result.nWarn; }
 
             // UTF BOM check
-            if (fileBuff[0] == 0xFe && fileBuff[1] == 0xFF) throw runtime_error("invalid file (UTF-16 BE encoded)");
-            if (fileBuff[0] == 0xFF && fileBuff[1] == 0xFe) throw runtime_error("invalid file (UTF-16 LE encoded)");
-            if (fileBuff[0] == 0x00 && fileBuff[1] == 0x00 && fileBuff[2] == 0xFe && fileBuff[3] == 0xFF) throw runtime_error("invalid file (UTF-32 BE encoded)");
-            if (fileBuff[0] == 0xFF && fileBuff[1] == 0xFe && fileBuff[2] == 0x00 && fileBuff[3] == 0x00) throw runtime_error("invalid file (UTF-32 LE encoded)");
+            if (fileBuff[0] == static_cast<char>(0x00) && fileBuff[1] == static_cast<char>(0x00) && fileBuff[2] == static_cast<char>(0xFe) && fileBuff[3] == static_cast<char>(0xFF)) throw runtime_error("encoding not supported: UTF-32 BE");
+            if (fileBuff[0] == static_cast<char>(0xFF) && fileBuff[1] == static_cast<char>(0xFe) && fileBuff[2] == static_cast<char>(0x00) && fileBuff[3] == static_cast<char>(0x00)) throw runtime_error("encoding not supported: UTF-32 LE");
+            if (fileBuff[0] == static_cast<char>(0xFe) && fileBuff[1] == static_cast<char>(0xFF)) throw runtime_error("encoding not supported: UTF-16 BE");
+            if (fileBuff[0] == static_cast<char>(0xFF) && fileBuff[1] == static_cast<char>(0xFe)) throw runtime_error("encoding not supported: UTF-16 LE");
 
             const char* tmpFB = fileBuff;
-            if (fileBuff[0] == 0xeF && fileBuff[1] == 0xBB && fileBuff[2] == 0xBF) tmpFB += 3; // skip UTF-8 BOM
+            if (fileBuff[0] == static_cast<char>(0xeF) && fileBuff[1] == static_cast<char>(0xBB) && fileBuff[2] == static_cast<char>(0xBF)) tmpFB += 3; // skip UTF-8 BOM
 
             if (fileBuff[fileSize - 1] != 0x0A)
             {
@@ -282,6 +284,11 @@ potoroo::Result& potoroo::Result::operator+=(const Result& summand)
 bool potoroo::operator>(const potoroo::Result& left, int right)
 {
     return ((left.nErr > right) || (left.nWarn > right) || ((left.nErr + left.nWarn) > right));
+}
+
+bool potoroo::operator==(const Result& left, int right)
+{
+    return ((left.nErr == right) && (left.nWarn == right));
 }
 
 std::ostream& potoroo::operator<<(std::ostream& os, const potoroo::Result& v)
@@ -415,6 +422,8 @@ Result potoroo::Job::parseFile(const std::string& filename, std::vector<Job>& jo
     if (r.nErr != 0) return -1;
 #endif
 
+
+
     for (size_t i = 0; i < line.size(); ++i)
     {
         ArgList args = ArgList::parse(line[i].data.c_str());
@@ -481,15 +490,26 @@ Job potoroo::Job::parseArgs(const ArgList& args)
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
 
-    if (tagCondCpp(ext) || (args.get(argType::tag).getValue() == "cpp")) tag = tagCpp;
+    if (args.get(argType::tag).getValue().compare(0, 7, "custom:") == 0)
+    {
+        tag = string(args.get(argType::tag).getValue(), 7);
+    }
+    else if (tagCondCpp(ext) || (args.get(argType::tag).getValue() == "cpp")) tag = tagCpp;
     else if (tagCondBash(ext) || (args.get(argType::tag).getValue() == "bash")) tag = tagBash;
     else if (tagCondBatch(ext) || (args.get(argType::tag).getValue() == "batch")) tag = tagBatch;
-    else if (args.get(argType::tag).getValue().compare(0, 7, "custom:", 7) == 0) tag = string(args.get(argType::tag).getValue(), 7);
     else
     {
         Job j;
         j.setValidity(false);
         j.setErrorMsg("unable to determine tag");
+        return j;
+    }
+
+    if (tag.length() > 15)
+    {
+        Job j;
+        j.setValidity(false);
+        j.setErrorMsg("tag too long");
         return j;
     }
 

@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           14.02.2021
+\date           17.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -16,8 +16,8 @@
 
 namespace potoroo
 {
-    Result processJob(const Job& job);
-    Result processJobs(const std::vector<Job>& jobs);
+    Result processJob(const Job& job) noexcept;
+    Result processJobs(const std::vector<Job>& jobs) noexcept;
 }
 
 #endif // _PROCESSOR_H_
