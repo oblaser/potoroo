@@ -23,46 +23,30 @@ using namespace potoroo;
 
 namespace
 {
-    void printEWI(const std::string& file, const std::string& text, size_t line, size_t col, int ewi)
-    {
-        cout << sgr(SGRFGC_BRIGHT_WHITE) << file << sgr(SGR_RESET) << ":";
-        if (line > 0) cout << sgr(SGRFGC_BRIGHT_WHITE) << line << sgr(SGR_RESET) << ":";
-        if (col > 0)
-        {
-            if (line <= 0) cout << ":";
-            cout << sgr(SGRFGC_BRIGHT_WHITE) << col << sgr(SGR_RESET) << ":";
-        }
-        cout << " ";
-
-        if (ewi == 0) cout << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD) << "error:";
-        else if (ewi == 1) cout << sgr(SGRFGC_BRIGHT_YELLOW, SGR_BOLD) << "warning:";
-        else if (ewi == 2) cout << sgr(SGRFGC_BRIGHT_CYAN, SGR_BOLD) << "info:";
-        else if (ewi == -1) cout << sgr(SGRFGC_BRIGHT_MAGENTA, SGR_BOLD) << "debug:";
-        else  cout << sgr(SGRFGC_BRIGHT_MAGENTA, SGR_BOLD) << "#ERROR# " << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD) << "error:";
-
-
-        cout << sgr(SGR_RESET) << " " << text << endl;
-    }
+    const string tagKeyWord_rmStart = "rm";
+    const string tagKeyWord_rmEnd = "endrm";
+    const string tagKeyWord_rmn = "rmn ";
+    const string tagKeyWord_ins = "ins:";
 
     void printError(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
-        printEWI(file, text, line, col, 0);
+        printEWI(file, text, line, col, 0, 1);
     }
 
     void printWarning(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
-        printEWI(file, text, line, col, 1);
+        printEWI(file, text, line, col, 1, 1);
     }
 
     void printInfo(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
-        printEWI(file, text, line, col, 2);
+        printEWI(file, text, line, col, 2, 1);
     }
 
 #if PRJ_DEBUG
     void printDbg(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
-        printEWI(file, text, line, col, -1);
+        printEWI(file, text, line, col, -1, 1);
     }
 #endif
 
@@ -120,18 +104,23 @@ namespace
         return nRead;
     }
 
+    // should not throw explicitly because then the out file does not get deleted
     Result caterpillarProc(const fs::path& inf, const fs::path& outf, const Job& job, const string& ewiFile)
     {
         Result r;
 
-        vector<fileIOt> pb; // process buffer
-        vector<fileIOt> ob; // out buffer
+        vector<fileIOt> procBuff;
+        vector<fileIOt> outBuff;
 
         const string tag = job.getTag() + " ";
 
         size_t pLine = 0; // 0 to detect first read
         size_t pCol = 1;  // processed line/column used to display error, threrefore starting with 1
+
         bool eof = false;
+        bool proc_rm = false;
+        bool proc_rmn = false;
+        size_t proc_rmn_cnt = 0;
 
         ifstream ifs;
         ofstream ofs;
@@ -144,10 +133,11 @@ namespace
 
         while (!eof)
         {
-            pb.clear();
-            size_t nRead = readsome(ifs, pb, ewiFile);
-            const fileIOt* const pPb = pb.data();
-            const fileIOt* p = pPb;
+            procBuff.clear();
+            size_t nRead = readsome(ifs, procBuff, ewiFile);
+            const fileIOt* const pb = procBuff.data();
+            const fileIOt* const pMax = pb + nRead;
+            const fileIOt* p = pb;
 
             if ((nRead < pbSizeMin) || ifs.eof()) eof = true;
 
@@ -157,24 +147,34 @@ namespace
                 pLine = 1;
 
                 // UTF BOM check
-                if (pb.size() >= 4)
+                if (procBuff.size() >= 4)
                 {
-                    if (pb[0] == static_cast<fileIOt>(0x00) && pb[1] == static_cast<fileIOt>(0x00) &&
-                        pb[2] == static_cast<fileIOt>(0xFe) && pb[3] == static_cast<fileIOt>(0xFF))
+                    if (procBuff[0] == static_cast<fileIOt>(0x00) && procBuff[1] == static_cast<fileIOt>(0x00) &&
+                        procBuff[2] == static_cast<fileIOt>(0xFe) && procBuff[3] == static_cast<fileIOt>(0xFF))
                     {
-                        throw runtime_error("encoding not supported: UTF-32 BE");
+                        printError(ewiFile, "encoding not supported: UTF-32 BE");
+                        return 1;
                     }
-                    if (pb[0] == static_cast<fileIOt>(0xFF) && pb[1] == static_cast<fileIOt>(0xFe) &&
-                        pb[2] == static_cast<fileIOt>(0x00) && pb[3] == static_cast<fileIOt>(0x00))
+                    if (procBuff[0] == static_cast<fileIOt>(0xFF) && procBuff[1] == static_cast<fileIOt>(0xFe) &&
+                        procBuff[2] == static_cast<fileIOt>(0x00) && procBuff[3] == static_cast<fileIOt>(0x00))
                     {
-                        throw runtime_error("encoding not supported: UTF-32 LE");
+                        printError(ewiFile, "encoding not supported: UTF-32 LE");
+                        return 1;
                     }
                 }
 
-                if (pb.size() >= 2)
+                if (procBuff.size() >= 2)
                 {
-                    if (pb[0] == static_cast<fileIOt>(0xFe) && pb[1] == static_cast<fileIOt>(0xFF)) throw runtime_error("encoding not supported: UTF-16 BE");
-                    if (pb[0] == static_cast<fileIOt>(0xFF) && pb[1] == static_cast<fileIOt>(0xFe)) throw runtime_error("encoding not supported: UTF-16 LE");
+                    if (procBuff[0] == static_cast<fileIOt>(0xFe) && procBuff[1] == static_cast<fileIOt>(0xFF))
+                    {
+                        printError(ewiFile, "encoding not supported: UTF-16 BE");
+                        return 1;
+                    }
+                    if (procBuff[0] == static_cast<fileIOt>(0xFF) && procBuff[1] == static_cast<fileIOt>(0xFe))
+                    {
+                        printError(ewiFile, "encoding not supported: UTF-16 LE");
+                        return 1;
+                    }
                 }
 
                 // UTF-8 BOM is copied like every other UTF-8 byte
@@ -186,39 +186,113 @@ namespace
 
 
             // process
-            while (p < (pPb + nRead))
+            while (p < pMax)
             {
-                ob.clear();
+                outBuff.clear();
 
-                // skip whitespace
-                while ((p < (pPb + nRead)) &&
+                // copy whitespace
+                while ((p < pMax) &&
                     ((*p == 0x09) || (*p == 0x20)))
                 {
-                    ob.push_back(*p);
+                    outBuff.push_back(*p);
                     ++p;
+                    ++pCol;
                 }
 
 
-                if (p < (pPb + nRead - tag.length()))
+                // tag?
+                if (p < (pMax - tag.length()))
                 {
                     if (tag.compare(0, tag.length(), p, tag.length()) == 0)
                     {
-                        ob.push_back('#');
-                        ob.push_back('#');
-                        ob.push_back('#');
+                        // yes, tag
+
+                        // determine keyword
+                        const size_t kwSize = 4;
+                        size_t kwi = kwSize;
+                        string kw[kwSize] =
+                        {
+                            tagKeyWord_rmStart,
+                            tagKeyWord_rmEnd,
+                            tagKeyWord_rmn,
+                            tagKeyWord_ins
+                        };
+
+                        p += tag.length();
+                        pCol += tag.length();
+
+                        for (size_t i = 0; i < kwSize; ++i)
+                        {
+                            if (p < (pMax - kw[i].length()))
+                            {
+                                if (kw[i].compare(0, kw[i].length(), p, kw[i].length()) == 0)
+                                {
+                                    kwi = i;
+                                }
+                            }
+                        }
+
+                        // kw found
+                        if (kwi < kwSize)
+                        {
+                            const size_t ewiCol = pCol;
+
+                            p += kw[kwi].length();
+                            pCol += kw[kwi].length();
+
+                            if (kw[kwi] == tagKeyWord_rmStart) printInfo(ewiFile, "rm found", pLine, ewiCol);
+                            else if (kw[kwi] == tagKeyWord_rmEnd) printInfo(ewiFile, "endrm found", pLine, ewiCol);
+                            else if (kw[kwi] == tagKeyWord_rmn) printInfo(ewiFile, "rmn found", pLine, ewiCol);
+                            else if (kw[kwi] == tagKeyWord_ins) printInfo(ewiFile, "ins found", pLine, ewiCol);
+                            else
+                            {
+                                ++r.nErr;
+                                printError(ewiFile, "internal error at \"" + string(__FILENAME__) + ":" + to_string(__LINE__) + "\"", pLine, ewiCol);
+                            }
+                        }
+                        else
+                        {
+                            const size_t ewiCol = pCol;
+                            string errMsg = "unknown key word: \"";
+
+                            while ((p < pMax) && (*p != 0x0A) && (*p != 0x09) && (*p != 0x20))
+                            {
+                                errMsg += *p;
+
+                                ++p;
+                                ++pCol;
+                            }
+                            errMsg += "\"";
+
+                            ++r.nErr;
+                            printError(ewiFile, errMsg, pLine, ewiCol);
+                        }
+
+
+
                     }
                 }
 
 
-                ob.push_back(*p);
+                // copy until line end
+                while ((p < pMax) && (*p != 0x0A))
+                {
+                    outBuff.push_back(*p);
+                    ++p;
+                    ++pCol;
+                }
+
+                // copy LF
+                outBuff.push_back(*p);
                 ++p;
+                ++pLine;
+                pCol = 1;
 
-
-                ofs.write(ob.data(), ob.size());
+                ofs.write(outBuff.data(), outBuff.size());
             }
 
 #if PRJ_DEBUG
-            for (int i = 0; i < 5; ++i) ofs << (char)0xE2 << (char)0x96 << (char)0x88; // full block
+            for (int i = 0; i < 2; ++i) ofs << (char)0xE2 << (char)0x96 << (char)0x88; // full block
 #endif
         }
 
@@ -368,11 +442,11 @@ potoroo::Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
         if (jobs[i].isValid())
         {
             cout << "\"" << jobs[i].getInputFile() << "\" " << "\"" << jobs[i].getOutputFile() << "\" " << "\"" << jobs[i].getTag() << "\"" << (jobs[i].warningAsError() ? " Werror" : "");
-        }
+    }
         else cout << "invalid: " << jobs[i].getErrorMsg();
 
         cout << endl;
-    }
+}
     cout << "===============" << endl;
 #endif
 
@@ -387,15 +461,10 @@ potoroo::Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
     {
         Job j = jobs[i];
 
-        cout << "process ";
-        cout << j.getInputFile();
-        cout << " " << j.getOutputFile();
-        cout << " " << j.getTag();
-        cout << (j.warningAsError() ? " Werror" : "");
-        cout << endl;
+        cout << "process " << j << endl;
 
         pr += processJob(j);
     }
 
     return pr;
-}
+    }

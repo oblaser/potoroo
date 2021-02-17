@@ -8,6 +8,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -22,31 +23,14 @@ using namespace potoroo;
 
 namespace
 {
-    void printEW(const std::string& file, const std::string& text, size_t line, size_t col, bool isError)
-    {
-        cout << file << ":";
-        if (line > 0) cout << sgr(SGRFGC_BRIGHT_WHITE) << line << sgr(SGR_RESET) << ":";
-        if (col > 0)
-        {
-            if (line <= 0) cout << ":";
-            cout << sgr(SGRFGC_BRIGHT_WHITE) << col << sgr(SGR_RESET) << ":";
-        }
-        cout << " ";
-
-        if (isError) cout << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD) << "error:";
-        else cout << sgr(SGRFGC_BRIGHT_YELLOW, SGR_BOLD) << "warning:";
-
-        cout << sgr(SGR_RESET) << " " << text << endl;
-    }
-
     void printError(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
-        printEW(file, text, line, col, true);
+        printEWI(file, text, line, col, 0, 0);
     }
 
     void printWarning(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
-        printEW(file, text, line, col, false);
+        printEWI(file, text, line, col, 1, 0);
     }
 
     bool tagCondCpp(const string& ext)
@@ -377,6 +361,14 @@ std::string potoroo::Job::getErrorMsg() const
     return errorMsg;
 }
 
+std::ostream& potoroo::operator<<(std::ostream& os, const Job& j)
+{
+    os << "\""<<j.getInputFile() << "\" \"" << j.getOutputFile() << "\" ";
+    os << j.getTag();
+    os << (j.warningAsError() ? " Werror" : "");
+    return os;
+}
+
 //! @brief Parses a given jobfile
 //! @param filename 
 //! @param jobs 
@@ -588,4 +580,58 @@ std::string potoroo::fsExceptionPath(const std::filesystem::filesystem_error& ex
     }
 
     return path;
+}
+
+void potoroo::printEWI(const std::string& file, const std::string& text, size_t line, size_t col, int ewi, int style)
+{
+    // because of the sgr formatting we cant use iomanip
+    size_t printedWidth;
+
+
+    printedWidth = file.length() + 1;
+
+    if (style == 0) cout << file << ":";
+    else if (style == 1) cout << sgr(SGRFGC_BRIGHT_WHITE) << file << sgr(SGR_RESET) << ":";
+    else cout << sgr(SGRFGC_BRIGHT_MAGENTA, SGR_BOLD) << "#printEWI style: " << style << "# " << sgr(SGR_RESET) << file << ":";
+
+
+    if (line > 0)
+    {
+        const string lineStr = to_string(line);
+        printedWidth += lineStr.length() + 1;
+
+        cout << sgr(SGRFGC_BRIGHT_WHITE) << lineStr << sgr(SGR_RESET) << ":";
+    }
+
+    if (col > 0)
+    {
+        if (line <= 0)
+        {
+            ++printedWidth;
+            cout << ":";
+        }
+
+        const string colStr = to_string(col);
+        printedWidth += colStr.length() + 1;
+        cout << sgr(SGRFGC_BRIGHT_WHITE) << colStr << sgr(SGR_RESET) << ":";
+    }
+
+    while (printedWidth++ < 22) cout << " ";
+
+
+    const size_t ewiWidth = 9;
+
+    if (ewi == 0) cout << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD) << left << setw(ewiWidth) << "error:";
+    else if (ewi == 1) cout << sgr(SGRFGC_BRIGHT_YELLOW, SGR_BOLD) << left << setw(ewiWidth) << "warning:";
+    else if (ewi == 2) cout << sgr(SGRFGC_BRIGHT_CYAN, SGR_BOLD) << left << setw(ewiWidth) << "info:";
+
+#if PRJ_DEBUG
+    else if (ewi == -1) cout << sgr(SGRFGC_BRIGHT_MAGENTA, SGR_BOLD) << left << setw(ewiWidth) << "debug:";
+#endif
+
+    else  cout << sgr(SGRFGC_BRIGHT_MAGENTA, SGR_BOLD) << "#printEWI ewi: " << ewi << "# " << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD) << "error:";
+
+
+
+    cout << sgr(SGR_RESET) << text << endl;
 }

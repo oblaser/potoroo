@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           15.02.2021
+\date           17.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -115,7 +115,7 @@ int main(int argc, char** argv)
 
     a = Arg("-jf");
     a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
-    //a.setValue("../../../test/system/processor_test.potorooJobs");
+    a.setValue("../../../test/system/processor/potorooJobs");
     args.add(a);
 
     args.add(Arg("--force-jf"));
