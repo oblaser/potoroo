@@ -1,6 +1,8 @@
 # used with debugger and breakpoints
 
 -if abc.bat -od .
+-if abc.bat -od . -t custom://#4567890123456
+-if abc.bat -od . -t custom://#456789012345
 
 -if "./a dir/asdf.ext"  	  -od ../../000	-Werror
 -if "./a dir/asdf.ext"  	  -of ./ptro	-Werror -t cpp        
