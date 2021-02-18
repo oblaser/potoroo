@@ -72,9 +72,9 @@ Deletes n lines after this tag and the tag itself. n = 1..9
 
 #### 3. ins
 ```
-//#p ins:c = Math.sqrt(a*a + b*b);
+//#p ins c = Math.sqrt(a*a + b*b);
 ```
-Removes the tag (inclusive ":"), wich results in adding a single line of code.
+Removes the tag wich results in adding a single line of code.
 
 ## warnings and errors
 ```

@@ -50,8 +50,8 @@ namespace potoroo
         Result(int ne);
         Result(int ne, int nw);
 
-        int nErr;
-        int nWarn;
+        int err;
+        int warn;
 
         Result operator+(const Result& summand);
         Result& operator+=(const Result& summand);

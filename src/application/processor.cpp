@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           17.02.2021
+\date           18.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -23,10 +23,28 @@ using namespace potoroo;
 
 namespace
 {
-    const string tagKeyWord_rmStart = "rm";
-    const string tagKeyWord_rmEnd = "endrm";
-    const string tagKeyWord_rmn = "rmn ";
-    const string tagKeyWord_ins = "ins:";
+    const string keyWord_rmStart = "rm";
+    const string keyWord_rmEnd = "endrm";
+    const string keyWord_rmn = "rmn";
+    const string keyWord_ins = "ins";
+
+    enum class KeyWord
+    {
+        unknown,
+        rmStart,
+        rmEnd,
+        rmn,
+        ins
+    };
+
+    struct ProcPos
+    {
+        ProcPos() : ln(0), col(0) {}
+        ProcPos(size_t line, size_t column) : ln(line), col(column) {}
+
+        size_t ln;
+        size_t col;
+    };
 
     void printError(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
@@ -50,9 +68,42 @@ namespace
     }
 #endif
 
+    //! @brief Checks if *p is space
+    bool isSpace(const char* p)
+    {
+        return (
+            (*p == 0x09) || // TAB
+            (*p == 0x20)    // Space
+            );
+    }
 
+    //! @brief Checks if *p is LF
+    bool isNewLine(const char* p)
+    {
+        return (*p == 0x0A);
+    }
 
+    //! @brief Checks if *p is space or LF
+    bool isWhiteSpace(const char* p)
+    {
+        return (
+            isSpace(p) ||
+            isNewLine(p)
+            );
+    }
 
+    KeyWord getKW(const string& kwStr)
+    {
+        KeyWord kw = KeyWord::unknown;
+
+        if (kwStr.compare(keyWord_rmStart) == 0) kw = KeyWord::rmStart;
+        if (kwStr.compare(keyWord_rmEnd) == 0) kw = KeyWord::rmEnd;
+        if (kwStr.compare(keyWord_rmn) == 0)  kw = KeyWord::rmn;
+        if (kwStr.compare(keyWord_ins) == 0) kw = KeyWord::ins;
+        //if (kwStr.compare(keyWord_) == 0) kw = KeyWord::;
+
+        return kw;
+    }
 
 
 
@@ -74,12 +125,11 @@ namespace
     //! @brief Reads some bytes from the input file
     //! @param ifs 
     //! @param [out] data 
-    //! @param ewiFile 
     //! @return Number of read bytes
     //! 
     //! Aligned to new lines and thus does neither chop UTF-8 chunks nor tags.
     //! 
-    size_t readsome(ifstream& ifs, vector<fileIOt>& data, const string& ewiFile)
+    size_t readsome(ifstream& ifs, vector<fileIOt>& data)
     {
         size_t nRead = 0;
 
@@ -104,7 +154,8 @@ namespace
         return nRead;
     }
 
-    // should not throw explicitly because then the out file does not get deleted
+    // should not throw explicitly because then the out file does not get deleted.
+    // expects LF files
     Result caterpillarProc(const fs::path& inf, const fs::path& outf, const Job& job, const string& ewiFile)
     {
         Result r;
@@ -114,13 +165,14 @@ namespace
 
         const string tag = job.getTag() + " ";
 
-        size_t pLine = 0; // 0 to detect first read
-        size_t pCol = 1;  // processed line/column used to display error, threrefore starting with 1
+        ProcPos pPos(0, 1); // 0 to detect first read
+                            // processed line/column used to display error, threrefore starting with 1
 
         bool eof = false;
+        bool skipNextNewLine = false;
         bool proc_rm = false;
-        bool proc_rmn = false;
-        size_t proc_rmn_cnt = 0;
+        ProcPos proc_rm_startPos;
+        size_t proc_rmn = 0;
 
         ifstream ifs;
         ofstream ofs;
@@ -134,7 +186,7 @@ namespace
         while (!eof)
         {
             procBuff.clear();
-            size_t nRead = readsome(ifs, procBuff, ewiFile);
+            size_t nRead = readsome(ifs, procBuff);
             const fileIOt* const pb = procBuff.data();
             const fileIOt* const pMax = pb + nRead;
             const fileIOt* p = pb;
@@ -142,9 +194,9 @@ namespace
             if ((nRead < pbSizeMin) || ifs.eof()) eof = true;
 
             // only on first read
-            if (pLine == 0)
+            if (pPos.ln == 0)
             {
-                pLine = 1;
+                pPos.ln = 1;
 
                 // UTF BOM check
                 if (procBuff.size() >= 4)
@@ -191,12 +243,11 @@ namespace
                 outBuff.clear();
 
                 // copy whitespace
-                while ((p < pMax) &&
-                    ((*p == 0x09) || (*p == 0x20)))
+                while ((p < pMax) && isSpace(p))
                 {
                     outBuff.push_back(*p);
                     ++p;
-                    ++pCol;
+                    ++pPos.col;
                 }
 
 
@@ -206,94 +257,164 @@ namespace
                     if (tag.compare(0, tag.length(), p, tag.length()) == 0)
                     {
                         // yes, tag
-
-                        // determine keyword
-                        const size_t kwSize = 4;
-                        size_t kwi = kwSize;
-                        string kw[kwSize] =
-                        {
-                            tagKeyWord_rmStart,
-                            tagKeyWord_rmEnd,
-                            tagKeyWord_rmn,
-                            tagKeyWord_ins
-                        };
+                        const size_t tagCol = pPos.col;
 
                         p += tag.length();
-                        pCol += tag.length();
+                        pPos.col += tag.length();
 
-                        for (size_t i = 0; i < kwSize; ++i)
+
+                        // skip space
+                        while ((p < pMax) && isSpace(p))
                         {
-                            if (p < (pMax - kw[i].length()))
-                            {
-                                if (kw[i].compare(0, kw[i].length(), p, kw[i].length()) == 0)
-                                {
-                                    kwi = i;
-                                }
-                            }
+                            ++p;
+                            ++pPos.col;
                         }
 
-                        // kw found
-                        if (kwi < kwSize)
+
+                        const size_t kwCol = pPos.col;
+
+                        // determine keyword
+                        string kwStr = "";
+
+                        while ((p < pMax) && !isWhiteSpace(p))
                         {
-                            const size_t ewiCol = pCol;
+                            kwStr += *p;
+                            ++p;
+                            ++pPos.col;
+                        }
 
-                            p += kw[kwi].length();
-                            pCol += kw[kwi].length();
+                        KeyWord kw = getKW(kwStr);
 
-                            if (kw[kwi] == tagKeyWord_rmStart) printInfo(ewiFile, "rm found", pLine, ewiCol);
-                            else if (kw[kwi] == tagKeyWord_rmEnd) printInfo(ewiFile, "endrm found", pLine, ewiCol);
-                            else if (kw[kwi] == tagKeyWord_rmn) printInfo(ewiFile, "rmn found", pLine, ewiCol);
-                            else if (kw[kwi] == tagKeyWord_ins) printInfo(ewiFile, "ins found", pLine, ewiCol);
-                            else
-                            {
-                                ++r.nErr;
-                                printError(ewiFile, "internal error at \"" + string(__FILENAME__) + ":" + to_string(__LINE__) + "\"", pLine, ewiCol);
-                            }
+
+                        if ((proc_rm && (kw != KeyWord::rmEnd)) || proc_rmn)
+                        {
+                            ++r.warn;
+                            printWarning(ewiFile, "###tags inside @rm@ or @rmn@ scope are ignored", pPos.ln, tagCol);
                         }
                         else
                         {
-                            const size_t ewiCol = pCol;
-                            string errMsg = "unknown key word: \"";
 
-                            while ((p < pMax) && (*p != 0x0A) && (*p != 0x09) && (*p != 0x20))
+                            // process key words
+                            if (kw == KeyWord::rmStart)
                             {
-                                errMsg += *p;
-
-                                ++p;
-                                ++pCol;
+                                printInfo(ewiFile, "###found @rm@ (processor not implemented)", pPos.ln, kwCol);
+                                //proc_rm = true;
                             }
-                            errMsg += "\"";
+                            else if (kw == KeyWord::rmEnd)
+                            {
+                                printInfo(ewiFile, "###found @endrm@ (processor not implemented)", pPos.ln, kwCol);
+                                /*if (proc_rm)
+                                {
+                                    proc_rm = false;
+                                    outBuff.clear();
+                                    skipNextNewLine = true;
+                                }
+                                else
+                                {
+                                    ++r.err;
+                                    printError(ewiFile, "###unexpected \"endrm\"", pPos.ln, kwCol);
+                                }*/
+                            }
+                            else if (kw == KeyWord::rmn)
+                            {
+                                // skip space
+                                while ((p < pMax) && isSpace(p))
+                                {
+                                    ++p;
+                                    ++pPos.col;
+                                }
 
-                            ++r.nErr;
-                            printError(ewiFile, errMsg, pLine, ewiCol);
+                                const size_t argCol = pPos.col;
+
+                                // get arg
+                                string arg = "";
+                                while ((p < pMax) && !isWhiteSpace(p))
+                                {
+                                    arg += *p;
+                                    ++p;
+                                    ++pPos.col;
+                                }
+
+
+                                if (arg.length() == 0)
+                                {
+                                    ++r.err;
+                                    printError(ewiFile, "###missing argument of @rmn@", pPos.ln, pPos.col);
+                                }
+                                else if ((arg.length() == 1) && (arg[0] >= 0x30) && (arg[0] <= 0x39))
+                                {
+                                    proc_rmn = (arg[0] - 0x30) + 1;
+                                }
+                                else
+                                {
+                                    ++r.err;
+                                    printError(ewiFile, "###invalid argument of @rmn@: \"" + arg + "\"", pPos.ln, argCol);
+                                }
+                            }
+                            else if (kw == KeyWord::ins)
+                            {
+                                if (p < pMax)
+                                {
+                                    ++p; // skip the space
+                                    ++pPos.col;
+                                }
+                            }
+                            else
+                            {
+                                ++r.err;
+                                printError(ewiFile, "###unknown key word \"" + kwStr + "\"", pPos.ln, kwCol);
+                            }
+
+
+                            // check if line is empty after key word
+                            if (p < pMax)
+                            {
+                                if ((kw != KeyWord::ins) && !isNewLine(p))
+                                {
+                                    ++r.warn;
+                                    printWarning(ewiFile, "no new line after expression", pPos.ln, pPos.col);
+                                }
+                            }
                         }
-
-
-
                     }
                 }
 
 
                 // copy until line end
-                while ((p < pMax) && (*p != 0x0A))
+                while ((p < pMax) && !isNewLine(p))
                 {
                     outBuff.push_back(*p);
                     ++p;
-                    ++pCol;
+                    ++pPos.col;
                 }
 
-                // copy LF
+                // LF
                 outBuff.push_back(*p);
                 ++p;
-                ++pLine;
-                pCol = 1;
+                ++pPos.ln;
+                pPos.col = 1;
+                if ((proc_rmn > 0) /*|| proc_rm*/) outBuff.clear();
+                if (proc_rmn > 0) --proc_rmn;
 
-                ofs.write(outBuff.data(), outBuff.size());
+                // write to outf
+                if (outBuff.size() > 0) ofs.write(outBuff.data(), outBuff.size());
             }
 
-#if PRJ_DEBUG
+#if PRJ_DEBUG && 0
             for (int i = 0; i < 2; ++i) ofs << (char)0xE2 << (char)0x96 << (char)0x88; // full block
 #endif
+        }
+
+        if (proc_rm)
+        {
+            ++r.err;
+            printError(ewiFile, "###missing @endrm@", pPos.ln, pPos.col);
+        }
+
+        if (proc_rmn)
+        {
+            ++r.warn;
+            printWarning(ewiFile, "###@rmn@ overlapped EOF", pPos.ln, pPos.col);
         }
 
         ifs.close();
@@ -311,17 +432,17 @@ namespace
         try { fs::remove(outf); }
         catch (fs::filesystem_error& ex)
         {
-            ++r.nWarn;
+            ++r.warn;
             printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.code().message() + fsExceptionPath(ex));
         }
         catch (exception& ex)
         {
-            ++r.nWarn;
+            ++r.warn;
             printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.what());
         }
         catch (...)
         {
-            ++r.nWarn;
+            ++r.warn;
             printWarning(ewiFile, rmFileErrorMsg);
         }
 
@@ -332,17 +453,17 @@ namespace
             try { fs::remove(outf.parent_path()); }
             catch (fs::filesystem_error& ex)
             {
-                ++r.nWarn;
+                ++r.warn;
                 printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.code().message() + fsExceptionPath(ex));
             }
             catch (exception& ex)
             {
-                ++r.nWarn;
+                ++r.warn;
                 printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.what());
             }
             catch (...)
             {
-                ++r.nWarn;
+                ++r.warn;
                 printWarning(ewiFile, rmDirErrorMsg);
             }
         }
@@ -360,7 +481,7 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
     bool createdOutDir = false;
 
 #if !PRJ_DEBUG
-    printInfo("processor", "not implemented, nothing done");
+    printError("processor", "still in development, nothing changed on filesystem");
     return 1;
 #endif
 
@@ -371,21 +492,19 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
     }
     catch (fs::filesystem_error& ex)
     {
-        ++r.nErr;
+        ++r.err;
         printError("", ex.code().message() + fsExceptionPath(ex));
     }
     catch (...)
     {
-        ++r.nErr;
+        ++r.err;
         printError("", "invalid in or out filename");
     }
 
-    if (r.nErr == 0)
+    if (r.err == 0)
     {
         try { ewiFile = inf.filename().string(); }
         catch (...) { ewiFile = job.getInputFile(); }
-
-        if (job.warningAsError()) printInfo(ewiFile, "\"Werror\" not yet implemented, has no effect");
 
         try
         {
@@ -398,17 +517,36 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
                 if (fs::equivalent(inf, outf)) throw runtime_error("in and out files are the same");
             }
 
-            // if copy:
-            //     if forced: fs::copy_file(inf, outf, fs::copy_options::overwrite_existing)
-            //     else: fs::copy_file(inf, outf, fs::copy_options::update_existing)
-            // else: caterpillarProc()
-            r += caterpillarProc(inf, outf, job, ewiFile);
+            /*if copy:
+                if forced: r += !fs::copy_file(inf, outf, fs::copy_options::overwrite_existing)
+                else: r += !fs::copy_file(inf, outf, fs::copy_options::update_existing)
+            else*/
+            {
+                // get lineEnding of inf
+                /* if LF */ r += caterpillarProc(inf, outf, job, ewiFile); /*
+                else
+                {
+                    fs::path tmpProcDir(outf.parent_path() / ".potorooTemp");
 
-            if (r.nErr > 0) r += rmOut(outf, ewiFile, createdOutDir);
+                    fs::path infLF(tmpProcDir / (inf.filename().string() + ".infLF"));
+                    fs::path outfLF(tmpProcDir / (outf.filename().string() + ".outfLF"));
+
+                    convertToLF(inf, infLF);
+
+                    r += caterpillarProc(infLF, outfLF, job, ewiFile);
+
+                    if CRLR: convertToCRLF(outfLF, outf);
+                    if CR: convertToCR(outfLF, outf);
+
+                    delete(tmpProcDir);
+                } /**/
+            }
+
+            if (r.err > 0) r += rmOut(outf, ewiFile, createdOutDir);
         }
         catch (fs::filesystem_error& ex)
         {
-            ++r.nErr;
+            ++r.err;
 
 #if PRJ_DEBUG
             printError(ewiFile, ex.what());
@@ -418,14 +556,20 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
         }
         catch (exception& ex)
         {
-            ++r.nErr;
+            ++r.err;
             printError(ewiFile, ex.what());
         }
         catch (...)
         {
-            ++r.nErr;
+            ++r.err;
             printError(ewiFile, "unknown");
         }
+    }
+
+    if (job.warningAsError() && (r.warn > 0))
+    {
+        ++r.err;
+        printError(ewiFile, "###[@Werror@] "+to_string(r.warn) + " warnings");
     }
 
     return r;
@@ -442,11 +586,11 @@ potoroo::Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
         if (jobs[i].isValid())
         {
             cout << "\"" << jobs[i].getInputFile() << "\" " << "\"" << jobs[i].getOutputFile() << "\" " << "\"" << jobs[i].getTag() << "\"" << (jobs[i].warningAsError() ? " Werror" : "");
-    }
+        }
         else cout << "invalid: " << jobs[i].getErrorMsg();
 
         cout << endl;
-}
+    }
     cout << "===============" << endl;
 #endif
 
@@ -456,15 +600,19 @@ potoroo::Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
 #endif
 
     Result pr;
+    Result lastR;
 
     for (size_t i = 0; i < jobs.size(); ++i)
     {
         Job j = jobs[i];
 
+        if (lastR > 0) cout << "\n";
+
         cout << "process " << j << endl;
 
-        pr += processJob(j);
+        lastR = processJob(j);
+        pr += lastR;
     }
 
     return pr;
-    }
+}

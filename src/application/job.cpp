@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           17.02.2021
+\date           18.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -10,7 +10,6 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 
 #include "job.h"
 #include "middleware/cliTextFormat.h"
@@ -188,8 +187,8 @@ namespace
             fileBuff = new char[fileSize];
             jfs.read(fileBuff, fileSize);
             try { jfs.close(); }
-            catch (exception& ex) { printWarning(procStr, "closing file failed: " + string(ex.what())); ++result.nWarn; }
-            catch (...) { printWarning(procStr, "closing file failed"); ++result.nWarn; }
+            catch (exception& ex) { printWarning(procStr, "closing file failed: " + string(ex.what())); ++result.warn; }
+            catch (...) { printWarning(procStr, "closing file failed"); ++result.warn; }
 
             // UTF BOM check
             if (fileBuff[0] == static_cast<char>(0x00) && fileBuff[1] == static_cast<char>(0x00) && fileBuff[2] == static_cast<char>(0xFe) && fileBuff[3] == static_cast<char>(0xFF)) throw runtime_error("encoding not supported: UTF-32 BE");
@@ -203,7 +202,7 @@ namespace
             if (fileBuff[fileSize - 1] != 0x0A)
             {
                 printWarning(procStr, "file does not end with a new line (may cause jobfile parse errors)");
-                ++result.nWarn;
+                ++result.warn;
             }
 
             jobFileExtractLines(tmpFB, fileBuff + fileSize, lines);
@@ -238,48 +237,48 @@ namespace
 
 
 potoroo::Result::Result()
-    : nErr(0), nWarn(0)
+    : err(0), warn(0)
 {
 }
 
 potoroo::Result::Result(int ne)
-    : nErr(ne), nWarn(0)
+    : err(ne), warn(0)
 {
 }
 
 potoroo::Result::Result(int ne, int nw)
-    : nErr(ne), nWarn(nw)
+    : err(ne), warn(nw)
 {
 }
 
 potoroo::Result potoroo::Result::operator+(const Result& summand)
 {
-    return Result(this->nErr + summand.nErr, this->nWarn + summand.nWarn);
+    return Result(this->err + summand.err, this->warn + summand.warn);
 }
 
 potoroo::Result& potoroo::Result::operator+=(const Result& summand)
 {
-    this->nErr += summand.nErr;
-    this->nWarn += summand.nWarn;
+    this->err += summand.err;
+    this->warn += summand.warn;
     return *this;
 }
 
 bool potoroo::operator>(const potoroo::Result& left, int right)
 {
-    return ((left.nErr > right) || (left.nWarn > right) || ((left.nErr + left.nWarn) > right));
+    return ((left.err > right) || (left.warn > right) || ((left.err + left.warn) > right));
 }
 
 bool potoroo::operator==(const Result& left, int right)
 {
-    return ((left.nErr == right) && (left.nWarn == right));
+    return ((left.err == right) && (left.warn == right));
 }
 
 std::ostream& potoroo::operator<<(std::ostream& os, const potoroo::Result& v)
 {
     os << "errors: ";
-    os << sgr(SGRFGC_BRIGHT_RED) << v.nErr << sgr(SGR_RESET);
+    os << sgr(SGRFGC_BRIGHT_RED) << v.err << sgr(SGR_RESET);
     os << "   warnings: ";
-    os << sgr(SGRFGC_BRIGHT_YELLOW) << v.nWarn << sgr(SGR_RESET);
+    os << sgr(SGRFGC_BRIGHT_YELLOW) << v.warn << sgr(SGR_RESET);
 
     return os;
 }
@@ -363,8 +362,8 @@ std::string potoroo::Job::getErrorMsg() const
 
 std::ostream& potoroo::operator<<(std::ostream& os, const Job& j)
 {
-    os << "\""<<j.getInputFile() << "\" \"" << j.getOutputFile() << "\" ";
-    os << j.getTag();
+    os << "\"" << j.getInputFile() << "\" \"" << j.getOutputFile() << "\" ";
+    os << "\"" << j.getTag() << "\"";
     os << (j.warningAsError() ? " Werror" : "");
     return os;
 }
@@ -374,7 +373,7 @@ std::ostream& potoroo::operator<<(std::ostream& os, const Job& j)
 //! @param jobs 
 //! @return 
 //! 
-//! return codes of potoroo::Result::nErr:
+//! return codes of potoroo::Result::err:
 //! - <0 on file IO error
 //! - 0 on success
 //! - >0 number of parse errors
@@ -410,7 +409,7 @@ Result potoroo::Job::parseFile(const std::string& filename, std::vector<Job>& jo
     line.push_back(JobFileLine(++___dbg_l, "-if ./sdf/ -od . -tag batch"));
 #else
     Result r = readJobFile(filename, line);
-    if (r.nErr != 0) return -1;
+    if (r.err != 0) return -1;
 #endif
 
 
@@ -425,12 +424,12 @@ Result potoroo::Job::parseFile(const std::string& filename, std::vector<Job>& jo
 
         if (apr != argProcResult::process)
         {
-            ++r.nErr;
+            ++r.err;
             printError("jobfile", aprErrMsg, line[i].line);
         }
         else if (!job.isValid())
         {
-            ++r.nErr;
+            ++r.err;
             printError("jobfile", job.getErrorMsg(), line[i].line);
         }
 #if PRJ_DEBUG && 0
@@ -585,7 +584,7 @@ std::string potoroo::fsExceptionPath(const std::filesystem::filesystem_error& ex
 void potoroo::printEWI(const std::string& file, const std::string& text, size_t line, size_t col, int ewi, int style)
 {
     // because of the sgr formatting we cant use iomanip
-    size_t printedWidth;
+    size_t printedWidth = 0;
 
 
     printedWidth = file.length() + 1;
@@ -615,8 +614,9 @@ void potoroo::printEWI(const std::string& file, const std::string& text, size_t 
         printedWidth += colStr.length() + 1;
         cout << sgr(SGRFGC_BRIGHT_WHITE) << colStr << sgr(SGR_RESET) << ":";
     }
+    cout << " ";
 
-    while (printedWidth++ < 22) cout << " ";
+    while (printedWidth++ < 21) cout << " ";
 
 
     const size_t ewiWidth = 9;
@@ -629,9 +629,62 @@ void potoroo::printEWI(const std::string& file, const std::string& text, size_t 
     else if (ewi == -1) cout << sgr(SGRFGC_BRIGHT_MAGENTA, SGR_BOLD) << left << setw(ewiWidth) << "debug:";
 #endif
 
-    else  cout << sgr(SGRFGC_BRIGHT_MAGENTA, SGR_BOLD) << "#printEWI ewi: " << ewi << "# " << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD) << "error:";
+    else  cout << sgr(SGRFGC_BRIGHT_MAGENTA, SGR_BOLD) << "#printEWI ewi: " << ewi << "# " << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD) << "error: ";
 
 
 
-    cout << sgr(SGR_RESET) << text << endl;
+    cout << sgr(SGR_RESET);
+
+    if (text.length() > 5)
+    {
+        if ((text[0] == '#') &&
+            (text[1] == '#') &&
+            (text[2] == '#')
+            )
+        {
+            bool on = false;
+
+            size_t i = 3;
+
+            while (i < text.length())
+            {
+                if (text[i] == '\"')
+                {
+                    if (on)
+                    {
+                        cout << sgr(SGR_RESET);
+                        cout << text[i];
+                        on = false;
+                    }
+                    else
+                    {
+                        cout << text[i];
+                        cout << sgr(SGRFGC_BRIGHT_WHITE);
+                        on = true;
+                    }
+                }
+                else if (text[i] == '@')
+                {
+                    if (on)
+                    {
+                        cout << sgr(SGR_RESET);
+                        on = false;
+                    }
+                    else
+                    {
+                        cout << sgr(SGRFGC_BRIGHT_WHITE);
+                        on = true;
+                    }
+                }
+                else cout << text[i];
+
+                ++i;
+            }
+
+            cout << sgr(SGR_RESET) << endl;
+            return;
+        }
+    }
+
+    cout << text << endl;
 }

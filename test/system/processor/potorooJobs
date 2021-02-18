@@ -1,6 +1,6 @@
 #
 # author        Oliver Blaser
-# date          17.02.2021
+# date          18.02.2021
 # copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 #
 
@@ -10,9 +10,10 @@
 # productive, test processor in files
 #
 
--if index.html          -od 000_deploy          -t custom:<!--ptro
+-if index.html          -od 000_deploy          -t "custom:<!-- ptro"
 -if js/index.js         -od 000_deploy/js
-#-if js/jQuery.js        -od 000_deploy/js       --copy # future feature
+#-if js/index.js         -od 000_deploy/js       -Werror
+#-if js/jQuery.js        -od 000_deploy/js       --copy       future feature
 
 
 
