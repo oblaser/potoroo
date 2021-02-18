@@ -2,7 +2,9 @@
 
 A script preprocessor, which enables you to use kind of compile switches in scrips.
 
-Supported line endings: `LF` and `CR+LF`
+> In development, no pre-release available yet.
+> 
+> See 'dev' branch for latest code.
 
 ## exapmles
 
