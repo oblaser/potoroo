@@ -2,11 +2,13 @@
 
 A script preprocessor, which enables you to use kind of compile switches in scrips.
 
-Only `LF` line endings are supported at the moment.
+> In development, see 'dev' branch for latest code.
+>
+> Only `LF` line endings are supported at the moment.
 
 ## exapmles
 
-See [processor_test.potorooJobs](./test/system/processor_test.potorooJobs) and [processor_test_src](./test/system/processor_test_src)
+See [processor test potorooJobs](./test/system/processor/potorooJobs) and [processor test src](./test/system/processor)
 
 ## cli arguments
 

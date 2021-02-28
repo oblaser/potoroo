@@ -484,11 +484,6 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
     string ewiFile;
     bool createdOutDir = false;
 
-#if !PRJ_DEBUG
-    printError("processor", "still in development, nothing changed on filesystem");
-    return 1;
-#endif
-
     try
     {
         inf = fs::path(job.getInputFile());
