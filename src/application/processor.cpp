@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           18.02.2021
+\date           28.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -169,7 +169,7 @@ namespace
                             // processed line/column used to display error, threrefore starting with 1
 
         bool eof = false;
-        bool skipNextNewLine = false;
+        bool skipThisLine = false;
         bool proc_rm = false;
         ProcPos proc_rm_startPos;
         size_t proc_rmn = 0;
@@ -257,6 +257,7 @@ namespace
                     if (tag.compare(0, tag.length(), p, tag.length()) == 0)
                     {
                         // yes, tag
+
                         const size_t tagCol = pPos.col;
 
                         p += tag.length();
@@ -289,7 +290,7 @@ namespace
                         if ((proc_rm && (kw != KeyWord::rmEnd)) || proc_rmn)
                         {
                             ++r.warn;
-                            printWarning(ewiFile, "###tags inside @rm@ or @rmn@ scope are ignored", pPos.ln, tagCol);
+                            printWarning(ewiFile, "###tags inside @rm@ or @rmn@ scopes are ignored", pPos.ln, tagCol);
                         }
                         else
                         {
@@ -297,23 +298,21 @@ namespace
                             // process key words
                             if (kw == KeyWord::rmStart)
                             {
-                                printInfo(ewiFile, "###found @rm@ (processor not implemented)", pPos.ln, kwCol);
-                                //proc_rm = true;
+                                proc_rm = true;
                             }
                             else if (kw == KeyWord::rmEnd)
                             {
-                                printInfo(ewiFile, "###found @endrm@ (processor not implemented)", pPos.ln, kwCol);
-                                /*if (proc_rm)
+                                if (proc_rm)
                                 {
                                     proc_rm = false;
                                     outBuff.clear();
-                                    skipNextNewLine = true;
+                                    skipThisLine = true;
                                 }
                                 else
                                 {
                                     ++r.err;
                                     printError(ewiFile, "###unexpected \"endrm\"", pPos.ln, kwCol);
-                                }*/
+                                }
                             }
                             else if (kw == KeyWord::rmn)
                             {
@@ -393,8 +392,13 @@ namespace
                 ++p;
                 ++pPos.ln;
                 pPos.col = 1;
-                if ((proc_rmn > 0) /*|| proc_rm*/) outBuff.clear();
+                if ((proc_rmn > 0) || proc_rm) outBuff.clear();
                 if (proc_rmn > 0) --proc_rmn;
+                if (skipThisLine)
+                {
+                    skipThisLine = false;
+                    outBuff.clear();
+                }
 
                 // write to outf
                 if (outBuff.size() > 0) ofs.write(outBuff.data(), outBuff.size());
@@ -569,7 +573,7 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
     if (job.warningAsError() && (r.warn > 0))
     {
         ++r.err;
-        printError(ewiFile, "###[@Werror@] "+to_string(r.warn) + " warnings");
+        printError(ewiFile, "###[@Werror@] " + to_string(r.warn) + " warnings");
     }
 
     return r;

@@ -1,6 +1,6 @@
 #
 # author        Oliver Blaser
-# date          18.02.2021
+# date          28.02.2021
 # copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 #
 
@@ -14,6 +14,7 @@
 -if js/index.js         -od 000_deploy/js
 #-if js/index.js         -od 000_deploy/js       -Werror
 #-if js/jQuery.js        -od 000_deploy/js       --copy       future feature
+#-if index.html          -od 000_deploy          -t "custom:<!-- ptro"   -Wsup 123,105,103       future feature
 
 
 

@@ -1,7 +1,7 @@
 ﻿/*
 
 author         Oliver Blaser
-date           18.02.2021
+date           28.02.2021
 copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -39,6 +39,22 @@ $(function()
 //#p endrm
 
     html += '<div>this text stays</div>';
+
+//#p rm         a comment
+
+    html += '<div class="tbr">';
+
+    ///#p rm
+    html += '<div>rm</div>';
+    ///#p endrm
+    html += 'bli bla blop';
+
+    //#p ins alert('should never occur 1');
+
+    html += '</div>';
+
+//#p endrm      a comment
+
     html += '</div>';
 
     html += '<div style="margin: 20px 0px;"><div style="display: inline-block; padding: 1px 5px; border: 1px solid black; border-radius: 5px;">';
