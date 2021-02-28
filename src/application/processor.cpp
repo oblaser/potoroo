@@ -476,7 +476,7 @@ namespace
     }
 }
 
-potoroo::Result potoroo::processJob(const Job& job) noexcept
+Result potoroo::processJob(const Job& job) noexcept
 {
     Result r;
     fs::path inf;
@@ -574,7 +574,7 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
     return r;
 }
 
-potoroo::Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
+Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
 {
 #if PRJ_DEBUG && 0
     cout << "===============\n" << "jobs:" << endl;
