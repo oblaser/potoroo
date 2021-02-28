@@ -10,10 +10,31 @@
 #define _JOB_H_
 
 #include <filesystem>
+#include <iostream>
 #include <string>
 #include <vector>
 
 #include "arg.h"
+
+
+#ifndef __FILENAME__
+#define __FILENAME__     (__FILE_TO_FILENAME__(__FILE__))
+constexpr const char* __FILE_TO_FILENAME__(const char* p)
+{
+    const char* fn = p;
+    while (*p)
+    {
+#if(PRJ_PLAT_WIN)
+        if (*p++ == '\\') fn = p;
+#else
+        if (*p++ == '/') fn = p;
+#endif
+    }
+    return fn;
+}
+#endif
+
+
 
 namespace potoroo
 {
@@ -29,8 +50,8 @@ namespace potoroo
         Result(int ne);
         Result(int ne, int nw);
 
-        int nErr;
-        int nWarn;
+        int err;
+        int warn;
 
         Result operator+(const Result& summand);
         Result& operator+=(const Result& summand);
@@ -68,6 +89,8 @@ namespace potoroo
         bool isValid() const;
         std::string getErrorMsg() const;
 
+        friend std::ostream& operator<<(std::ostream& os, const Job& j);
+
     private:
         std::string inFile;
         std::string outFile;
@@ -83,8 +106,8 @@ namespace potoroo
     };
 
     Result changeWD(const std::string& jobfile);
-
     std::string fsExceptionPath(const std::filesystem::filesystem_error& ex);
+    void printEWI(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0, int ewi = 0x7FFFFFFF, int style = 0x7FFFFFFF);
 }
 
 #endif // _JOB_H_

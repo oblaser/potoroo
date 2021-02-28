@@ -2,13 +2,13 @@
 
 A script preprocessor, which enables you to use kind of compile switches in scrips.
 
-> In development, no pre-release available yet.
-> 
-> See 'dev' branch for latest code.
+> In development, see 'dev' branch for latest code.
+>
+>Only `LF` line endings are supported at the moment.
 
 ## exapmles
 
-See [processor_test.potorooJobs](./test/system/processor_test.potorooJobs) and [processor_test_src](./test/system/processor_test_src)
+See [processor test potorooJobs](./test/system/processor/potorooJobs) and [processor test src](./test/system/processor)
 
 ## cli arguments
 
@@ -74,9 +74,9 @@ Deletes n lines after this tag and the tag itself. n = 1..9
 
 #### 3. ins
 ```
-//#p ins:c = Math.sqrt(a*a + b*b);
+//#p ins c = Math.sqrt(a*a + b*b);
 ```
-Removes the tag (inclusive ":"), wich results in adding a single line of code.
+Removes the tag wich results in adding a single line of code.
 
 ## warnings and errors
 ```

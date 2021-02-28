@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           15.02.2021
+\date           17.02.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -115,10 +115,10 @@ int main(int argc, char** argv)
 
     a = Arg("-jf");
     a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
-    //a.setValue("../../../test/system/processor_test.potorooJobs");
+    a.setValue("../../../test/system/processor/potorooJobs");
     args.add(a);
 
-    args.add(Arg("--force-jf"));
+    //args.add(Arg("--force-jf"));
 
     //args.add(Arg("-v"));
     //args.add(Arg("-h"));
@@ -132,18 +132,18 @@ int main(int argc, char** argv)
         vector<Job> jobs;
         Result pr = Job::parseFile(jobfile, jobs);
 
-        if ((pr.nErr == 0) ||
-            (args.contains(argType::forceJf) && (pr.nErr > 0)) // only force if no file IO error
+        if ((pr.err == 0) ||
+            (args.contains(argType::forceJf) && (pr.err > 0)) // only force if no file IO error
             )
         {
             Result cwdr = changeWD(jobfile);
             pr += cwdr;
 
-            if (cwdr.nErr == 0)
+            if (cwdr.err == 0)
             {
-                if (pr.nErr > 0) cout << endl;
+                if (pr.err > 0) cout << endl;
                 pr += processJobs(jobs);
-                if (pr.nErr) result = rcNErrorBase + pr.nErr;
+                if (pr.err) result = rcNErrorBase + pr.err;
                 else result = rcOK;
             }
             else
@@ -162,7 +162,7 @@ int main(int argc, char** argv)
     {
         Result pr = processJob(Job::parseArgs(args));
         printProcessorResult(pr);
-        if (pr.nErr) result = rcNErrorBase + pr.nErr;
+        if (pr.err) result = rcNErrorBase + pr.err;
         else result = rcOK;
     }
     else if (apr == argProcResult::printHelp)

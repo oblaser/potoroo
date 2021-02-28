@@ -1,0 +1,31 @@
+#
+# author        Oliver Blaser
+# date          28.02.2021
+# copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
+#
+
+
+
+#
+# productive, test processor in files
+#
+
+-if index.html          -od 000_deploy          -t "custom:<!-- ptro"
+-if js/index.js         -od 000_deploy/js
+#-if js/index.js         -od 000_deploy/js       -Werror
+#-if js/jQuery.js        -od 000_deploy/js       --copy       future feature
+#-if index.html          -od 000_deploy          -t "custom:<!-- ptro"   -Wsup 123,105,103       future feature
+
+
+
+#
+# test behaviour on errors
+#
+
+#-if ./utf16BE.php       -od ./000_deploy
+#-if ./utf16LE.php       -od ./000_deploy
+#-if ./utf32BE.php       -od ./000_deploy
+#-if ./utf32LE.php       -od ./000_deploy
+
+# to test if the file does not get overwritten:
+#-if index.html          -od .                   -t cpp
