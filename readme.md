@@ -3,8 +3,6 @@
 A script preprocessor, which enables you to use kind of compile switches in scrips.
 
 > In development, see 'dev' branch for latest code.
->
-> Only `LF` line endings are supported at the moment.
 
 ## exapmles
 

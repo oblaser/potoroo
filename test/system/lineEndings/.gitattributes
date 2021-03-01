@@ -1,0 +1,7 @@
+/cr.js eof=cr
+/crlf.js eof=crlf
+/lf.js eof=lf
+
+/oneLine-cr.js eof=cr
+/oneLine-crlf.js eof=crlf
+/oneLine-lf.js eof=lf
