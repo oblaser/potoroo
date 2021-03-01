@@ -163,7 +163,7 @@ namespace
         {
             ifstream jfs;
 
-            int fileSize = 0;
+            size_t fileSize = 0;
 
             fs::path jobfile(filename);
 
@@ -214,10 +214,13 @@ namespace
             const char* tmpFB = fileBuff;
             if (fileBuff[0] == static_cast<char>(0xeF) && fileBuff[1] == static_cast<char>(0xBB) && fileBuff[2] == static_cast<char>(0xBF)) tmpFB += 3; // skip UTF-8 BOM
 
-            if (fileBuff[fileSize - 1] != 0x0A)
+            if (fileSize > 0)
             {
-                printWarning(procStr, "file does not end with a new line (may cause jobfile parse errors)");
-                ++result.warn;
+                if (fileBuff[fileSize - 1] != 0x0A)
+                {
+                    printWarning(procStr, "file does not end with a new line (may cause jobfile parse errors)");
+                    ++result.warn;
+                }
             }
 
             jobFileExtractLines(tmpFB, fileBuff + fileSize, lines);

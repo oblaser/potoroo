@@ -8,6 +8,8 @@
 
 #include "util.h"
 
+#include <fstream>
+
 #include "cliTextFormat.h"
 
 namespace fs = std::filesystem;
@@ -78,16 +80,6 @@ Result changeWD(const std::string& jobfile)
     int r = 1;
     const string procStr = "change working dir";
 
-#if PRJ_DEBUG && 0
-    {
-        ofstream f;
-        f.open("000_cwd_before");
-        f << "000_cwdTest" << endl;
-        f.close();
-    }
-#define ___DBG_UTIL_CWD_CREATEFILE (1)
-#endif
-
     try
     {
         fs::current_path(fs::path(jobfile).parent_path());
@@ -110,18 +102,6 @@ Result changeWD(const std::string& jobfile)
         printEWI(procStr, "unknown", 0, 0, 0, 0);
     }
 
-#if PRJ_DEBUG
-#ifdef ___DBG_UTIL_CWD_CREATEFILE
-    if (r == 0)
-    {
-        ofstream f;
-        f.open("000_cwd_after");
-        f << "000_cwdTest" << endl;
-        f.close();
-    }
-#endif
-#endif
-
     return r;
 }
 
@@ -140,6 +120,16 @@ std::string fsExceptionPath(const std::filesystem::filesystem_error& ex)
     return path;
 }
 
+//! @brief Prints a formatted Error, Warning or Info message
+//! @param file File- or processname
+//! @param text Message
+//! @param line Linenumber (omitted if 0)
+//! @param col Column (omitted if 0)
+//! @param ewi Message type
+//! @param style Format style
+//! 
+//! Message types: 0 error / 1 warning / 2 info
+//! Styles: 0 process / 1 file
 void printEWI(const std::string& file, const std::string& text, size_t line, size_t col, int ewi, int style)
 {
     // because of the sgr formatting we cant use iomanip
@@ -246,4 +236,135 @@ void printEWI(const std::string& file, const std::string& text, size_t line, siz
     }
 
     cout << text << endl;
+}
+
+lineEnding detectLineEnding(const std::filesystem::path& filepath)
+{
+    lineEnding le = lineEnding::error;
+
+    ifstream ifs;
+
+    ifs.open(filepath, ios::in | ios::binary);
+
+    if (ifs.is_open())
+    {
+        char buffer[2] = { 0, 0 };
+        bool searching = true;
+
+        while (searching)
+        {
+            buffer[1] = static_cast<char>(ifs.get());
+
+            if (ifs.good())
+            {
+                if ((buffer[0] != static_cast<char>(0x0D)) && (buffer[1] == static_cast<char>(0x0A)))
+                {
+                    searching = false;
+                    le = lineEnding::LF;
+                }
+                else if ((buffer[0] == static_cast<char>(0x0D)) && (buffer[1] != static_cast<char>(0x0A)))
+                {
+                    searching = false;
+                    le = lineEnding::CR;
+                }
+                else if ((buffer[0] == static_cast<char>(0x0D)) && (buffer[1] == static_cast<char>(0x0A)))
+                {
+                    searching = false;
+                    le = lineEnding::CRLF;
+                }
+                // else ; nop, still searching
+            }
+            else if (ifs.eof())
+            {
+                if (buffer[0] == static_cast<char>(0x0D))
+                {
+                    searching = false;
+                    le = lineEnding::CR;
+                }
+                else // no new line in file -> assume LF because its the simpliest
+                {
+                    searching = false;
+                    le = lineEnding::LF;
+                }
+            }
+            else
+            {
+                searching = false;
+                le = lineEnding::error;
+            }
+
+            buffer[0] = buffer[1];
+        }
+
+        ifs.close();
+    }
+
+    return le;
+}
+
+int convertLineEnding(const std::filesystem::path& inf, const std::filesystem::path& outf, lineEnding outfLineEnding)
+{
+    lineEnding ile = detectLineEnding(inf);
+    return convertLineEnding(inf, ile, outf, outfLineEnding, string());
+}
+
+int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding)
+{
+    return convertLineEnding(inf, infLineEnding, outf, outfLineEnding, string());
+}
+
+int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding, std::string& errMsg)
+{
+    int result = 0;
+    errMsg.clear();
+
+    ifstream ifs;
+    ofstream ofs;
+
+    ifs.open(inf, ios::in | ios::binary);
+    ofs.open(outf, ios::out | ios::binary);
+
+    bool proc = true;
+
+    if (infLineEnding == lineEnding::CRLF)
+    {
+        errMsg = "CRLF input not implemented";
+        result = -1;
+    }
+    else if ((infLineEnding == lineEnding::LF) || (infLineEnding == lineEnding::CR))
+    {
+        while (proc)
+        {
+            char c = static_cast<char>(ifs.get());
+
+            if (ifs.good())
+            {
+                if (((infLineEnding == lineEnding::LF) && (c == static_cast<char>(0x0A))) ||
+                    ((infLineEnding == lineEnding::CR) && (c == static_cast<char>(0x0D)))
+                    )
+                {
+                    if (outfLineEnding == lineEnding::LF) ofs.put(0x0A);
+                    else if (outfLineEnding == lineEnding::CR) ofs.put(0x0D);
+                    else if (outfLineEnding == lineEnding::CRLF) { ofs.put(0x0D); ofs.put(0x0A); }
+                    else
+                    {
+                        errMsg = "invalid out line ending";
+                        result = 2;
+                    }
+                }
+                else ofs.put(c);
+            }
+            else proc = false;
+        }
+    }
+    else
+    {
+        errMsg = "invalid in line ending";
+        result = 1;
+    }
+
+    ifs.close();
+    ofs.close();
+
+    return result;
 }

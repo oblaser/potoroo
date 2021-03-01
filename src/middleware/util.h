@@ -52,10 +52,28 @@ struct Result
     friend std::ostream& operator<<(std::ostream& os, const Result& v);
 };
 
+
+
+enum class lineEnding
+{
+    error,
+
+    LF,
+    CR,
+    CRLF
+};
+
+
+
 Result changeWD(const std::string& jobfile);
 
 std::string fsExceptionPath(const std::filesystem::filesystem_error& ex);
 
 void printEWI(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0, int ewi = 0x7FFFFFFF, int style = 0x7FFFFFFF);
+
+lineEnding detectLineEnding(const std::filesystem::path& filepath);
+int convertLineEnding(const std::filesystem::path& inf, const std::filesystem::path& outf, lineEnding outfLineEnding);
+int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding);
+int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding, std::string& errMsg);
 
 #endif // _UTIL_H_

@@ -30,6 +30,8 @@ namespace potoroo
 
     enum class argType
     {
+        argType_invalid,
+
         help,
         version,
         jobFile,
@@ -38,19 +40,17 @@ namespace potoroo
         outFile,
         tag,
         forceJf,
-        wError,
-
-        argType_invalid
+        wError
     };
 
     enum class argProcResult
     {
+        error,
+
         loadFile,
         process,
         printVersion,
-        printHelp,
-
-        error
+        printHelp
     };
 
     class Arg

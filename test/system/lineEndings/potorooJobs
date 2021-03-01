@@ -1,0 +1,17 @@
+#
+# author        Oliver Blaser
+# date          28.02.2021
+# copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
+#
+
+# git may destroy line endings while committing. Make shure that they are correct!
+
+-if lf.js               -od 000_deploy
+-if cr.js               -od 000_deploy
+-if crlf.js             -od 000_deploy
+
+-if oneLine-lf.js       -od 000_deploy
+-if oneLine-cr.js       -od 000_deploy
+-if oneLine-crlf.js     -od 000_deploy
+
+-if oneLine.js          -od 000_deploy

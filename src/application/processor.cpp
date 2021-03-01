@@ -31,6 +31,7 @@ namespace
     enum class KeyWord
     {
         unknown,
+
         rmStart,
         rmEnd,
         rmn,
@@ -521,24 +522,78 @@ Result potoroo::processJob(const Job& job) noexcept
                 else: r += !fs::copy_file(inf, outf, fs::copy_options::update_existing)
             else*/
             {
-                // get lineEnding of inf
-                /* if LF */ r += caterpillarProc(inf, outf, job, ewiFile); /*
+                lineEnding ile = detectLineEnding(inf);
+
+                if (ile == lineEnding::error)
+                {
+                    ++r.warn;
+                    printWarning(ewiFile, "Unable to determine line ending, assuming LF");
+                    ile = lineEnding::LF;
+                }
+
+                if (ile == lineEnding::LF) r += caterpillarProc(inf, outf, job, ewiFile);
                 else
                 {
                     fs::path tmpProcDir(outf.parent_path() / ".potorooTemp");
-
                     fs::path infLF(tmpProcDir / (inf.filename().string() + ".infLF"));
                     fs::path outfLF(tmpProcDir / (outf.filename().string() + ".outfLF"));
 
-                    convertToLF(inf, infLF);
+                    fs::create_directories(tmpProcDir);
 
-                    r += caterpillarProc(infLF, outfLF, job, ewiFile);
+                    string errMsg;
+                    bool deleteTmpProcDir = true;
 
-                    if CRLR: convertToCRLF(outfLF, outf);
-                    if CR: convertToCR(outfLF, outf);
+                    if (convertLineEnding(inf, ile, infLF, lineEnding::LF, errMsg) == 0)
+                    {
+                        r += caterpillarProc(infLF, outfLF, job, ewiFile);
 
-                    delete(tmpProcDir);
-                } /**/
+                        if (r.err == 0)
+                        {
+                            if (convertLineEnding(outfLF, lineEnding::LF, outf, ile, errMsg) != 0)
+                            {
+                                deleteTmpProcDir = false;
+
+                                ++r.warn;
+                                printWarning("convert line ending", errMsg);
+
+                                //printEWI("convert line ending", errMsg, 0, 0, 1, 0);
+
+                                /*string msg = "could not convert line ending to output";
+
+                                if (errMsg.length() > 0)
+                                {
+                                    msg += ":";
+                                    if (errMsg.length() <= 30) msg += " ";
+                                    else msg += "\n";
+                                    msg += errMsg;
+                                }
+
+                                printWarning(ewiFile, msg);*/
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ++r.err;
+                        printError("convert line ending", errMsg);
+
+                        //printEWI("convert line ending", errMsg, 0, 0, 0, 0);
+
+                        /*string msg = "could not convert line ending from input";
+
+                        if (errMsg.length() > 0)
+                        {
+                            msg += ":";
+                            if (errMsg.length() <= 30) msg += " ";
+                            else msg += "\n";
+                            msg += errMsg;
+                        }
+
+                        printError(ewiFile, msg);*/
+                    }
+
+                    if (deleteTmpProcDir) fs::remove_all(tmpProcDir);
+                }
             }
 
             if (r.err > 0) r += rmOut(outf, ewiFile, createdOutDir);

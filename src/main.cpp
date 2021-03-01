@@ -116,6 +116,7 @@ int main(int argc, char** argv)
     a = Arg("-jf");
     a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
     a.setValue("../../../test/system/processor/potorooJobs");
+    a.setValue("../../../test/system/lineEndings/potorooJobs");
     args.add(a);
 
     //args.add(Arg("--force-jf"));
