@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           28.02.2021
+\date           01.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -565,20 +565,6 @@ Result potoroo::processJob(const Job& job) noexcept
 
                                 ++r.warn;
                                 printWarning("convert line ending", errMsg);
-
-                                //printEWI("convert line ending", errMsg, 0, 0, 1, 0);
-
-                                /*string msg = "could not convert line ending to output";
-
-                                if (errMsg.length() > 0)
-                                {
-                                    msg += ":";
-                                    if (errMsg.length() <= 30) msg += " ";
-                                    else msg += "\n";
-                                    msg += errMsg;
-                                }
-
-                                printWarning(ewiFile, msg);*/
                             }
                         }
                     }
@@ -586,20 +572,6 @@ Result potoroo::processJob(const Job& job) noexcept
                     {
                         ++r.err;
                         printError("convert line ending", errMsg);
-
-                        //printEWI("convert line ending", errMsg, 0, 0, 0, 0);
-
-                        /*string msg = "could not convert line ending from input";
-
-                        if (errMsg.length() > 0)
-                        {
-                            msg += ":";
-                            if (errMsg.length() <= 30) msg += " ";
-                            else msg += "\n";
-                            msg += errMsg;
-                        }
-
-                        printError(ewiFile, msg);*/
                     }
 
                     if (deleteTmpProcDir) fs::remove_all(tmpProcDir);

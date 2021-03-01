@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           28.02.2021
+\date           01.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -321,6 +321,8 @@ int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding
     ifstream ifs;
     ofstream ofs;
 
+    ofs.exceptions(ios::failbit | ios::badbit | ios::eofbit);
+
     ifs.open(inf, ios::in | ios::binary);
     ofs.open(outf, ios::out | ios::binary);
 
@@ -328,8 +330,59 @@ int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding
 
     if (infLineEnding == lineEnding::CRLF)
     {
-        errMsg = "CRLF input not implemented";
-        result = -1;
+        char c[2] = { 0, 0 };
+
+        while (proc)
+        {
+            c[0] = static_cast<char>(ifs.get());
+
+            if (ifs.good())
+            {
+                if (c[0] == static_cast<char>(0x0D))
+                {
+                    c[1] = static_cast<char>(ifs.get());
+
+                    if (ifs.good())
+                    {
+                        if ((c[0] == static_cast<char>(0x0D)) && (c[1] == static_cast<char>(0x0A)))
+                        {
+                            if (outfLineEnding == lineEnding::LF) ofs.put(0x0A);
+                            else if (outfLineEnding == lineEnding::CR) ofs.put(0x0D);
+                            else if (outfLineEnding == lineEnding::CRLF) { ofs.put(0x0D); ofs.put(0x0A); }
+                            else
+                            {
+                                errMsg = "invalid out line ending";
+                                result = 2;
+                                proc = false;
+                            }
+                        }
+                        else
+                        {
+                            ofs.put(c[0]);
+                            ofs.put(c[1]);
+                        }
+                    }
+                    else if (ifs.eof())
+                    {
+                        ofs.put(c[0]);
+                        proc = false;
+                    }
+                    else
+                    {
+                        errMsg = "in file IO error: ";
+                        
+                        if (ifs.bad()) errMsg += "badbit";
+                        else if (ifs.fail()) errMsg += "failbit";
+                        else errMsg += "unknown";
+
+                        result = 3;
+                        proc = false;
+                    }
+                }
+                else ofs.put(c[0]);
+            }
+            else proc = false;
+        }
     }
     else if ((infLineEnding == lineEnding::LF) || (infLineEnding == lineEnding::CR))
     {
@@ -350,6 +403,7 @@ int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding
                     {
                         errMsg = "invalid out line ending";
                         result = 2;
+                        proc = false;
                     }
                 }
                 else ofs.put(c);
