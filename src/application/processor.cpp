@@ -380,6 +380,7 @@ namespace
                 }
 
 
+
                 // copy until line end
                 while ((p < pMax) && !isNewLine(p))
                 {
@@ -388,18 +389,27 @@ namespace
                     ++pPos.col;
                 }
 
-                // LF
-                outBuff.push_back(*p);
-                ++p;
+
+
+                // new line
+                if (p < pMax)
+                {
+                    outBuff.push_back(*p);
+                    ++p;
+                }
+
                 ++pPos.ln;
                 pPos.col = 1;
-                if ((proc_rmn > 0) || proc_rm) outBuff.clear();
-                if (proc_rmn > 0) --proc_rmn;
-                if (skipThisLine)
+
+                if ((proc_rmn > 0) || proc_rm || skipThisLine)
                 {
                     skipThisLine = false;
                     outBuff.clear();
                 }
+
+                if (proc_rmn > 0) --proc_rmn;
+
+
 
                 // write to outf
                 if (outBuff.size() > 0) ofs.write(outBuff.data(), outBuff.size());
@@ -607,7 +617,7 @@ Result potoroo::processJob(const Job& job) noexcept
 #else
             printError(ewiFile, ex.code().message() + fsExceptionPath(ex));
 #endif
-        }
+    }
         catch (exception& ex)
         {
             ++r.err;
@@ -618,7 +628,7 @@ Result potoroo::processJob(const Job& job) noexcept
             ++r.err;
             printError(ewiFile, "unknown");
         }
-    }
+}
 
     if (job.warningAsError() && (r.warn > 0))
     {
