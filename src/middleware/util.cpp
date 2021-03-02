@@ -8,6 +8,7 @@
 
 #include "util.h"
 
+#include <filesystem>
 #include <fstream>
 
 #include "cliTextFormat.h"
@@ -85,10 +86,6 @@ Result changeWD(const std::string& jobfile)
         fs::current_path(fs::path(jobfile).parent_path());
         r = 0;
     }
-    catch (fs::filesystem_error& ex)
-    {
-        printEWI(procStr, ex.code().message() + fsExceptionPath(ex), 0, 0, 0, 0);
-    }
     catch (exception& ex)
     {
         printEWI(procStr, ex.what(), 0, 0, 0, 0);
@@ -99,21 +96,6 @@ Result changeWD(const std::string& jobfile)
     }
 
     return r;
-}
-
-std::string fsExceptionPath(const std::filesystem::filesystem_error& ex)
-{
-    string path1 = ex.path1().string();
-    string path2 = ex.path2().string();
-    string path = "";
-
-    if ((path1.length() >= 0) || (path2.length() >= 0))
-    {
-        if (path2.length() == 0) path += " \"" + path1 + "\"";
-        else path += "\npath1: \"" + path1 + "\"\npath2: \"" + path2 + "\"";
-    }
-
-    return path;
 }
 
 //! @brief Prints a formatted Error, Warning or Info message

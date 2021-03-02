@@ -116,9 +116,7 @@ int main(int argc, char** argv)
 
 #if PRJ_DEBUG && 1
     Arg a;
-
     a = Arg("-jf");
-
 #ifdef _DEBUG_ECLIPSE
     a.setValue("../../test/system/processor/potorooJobs");
 #else
@@ -126,7 +124,18 @@ int main(int argc, char** argv)
     a.setValue("../../../test/system/processor/potorooJobs");
     //a.setValue("../../../test/system/lineEndings/potorooJobs");
 #endif
-    args.add(a);
+    //args.add(a);
+
+
+
+//    a = Arg("-if");
+//    a.setValue("../../test/system/processor/js/index.js");
+//    args.add(a);
+//    a = Arg("-od");
+//    a.setValue(".");
+//    args.add(a);
+
+
 
     //args.add(Arg("--force-jf"));
 

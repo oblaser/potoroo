@@ -187,6 +187,7 @@ string cli::sgr(const uint8_t* paramList, size_t n)
     result.clear();
 
 #else
+#ifndef _DEBUG_ECLIPSE
 
     result = "\x1B[";
 
@@ -198,6 +199,7 @@ string cli::sgr(const uint8_t* paramList, size_t n)
 
     result += "m";
 
+#endif
 #endif
 
     return result;
