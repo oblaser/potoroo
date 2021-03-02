@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           28.02.2021
+\date           01.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -31,6 +31,7 @@ namespace
     enum class KeyWord
     {
         unknown,
+
         rmStart,
         rmEnd,
         rmn,
@@ -112,7 +113,7 @@ namespace
 
 
 
-#if PRJ_DEBUG
+#if PRJ_DEBUG && 0
     const size_t pbSizeMin = 200;
 #else
     const size_t pbSizeMin = 100 * 1024; // 100k
@@ -379,6 +380,7 @@ namespace
                 }
 
 
+
                 // copy until line end
                 while ((p < pMax) && !isNewLine(p))
                 {
@@ -387,18 +389,27 @@ namespace
                     ++pPos.col;
                 }
 
-                // LF
-                outBuff.push_back(*p);
-                ++p;
+
+
+                // new line
+                if (p < pMax)
+                {
+                    outBuff.push_back(*p);
+                    ++p;
+                }
+
                 ++pPos.ln;
                 pPos.col = 1;
-                if ((proc_rmn > 0) || proc_rm) outBuff.clear();
-                if (proc_rmn > 0) --proc_rmn;
-                if (skipThisLine)
+
+                if ((proc_rmn > 0) || proc_rm || skipThisLine)
                 {
                     skipThisLine = false;
                     outBuff.clear();
                 }
+
+                if (proc_rmn > 0) --proc_rmn;
+
+
 
                 // write to outf
                 if (outBuff.size() > 0) ofs.write(outBuff.data(), outBuff.size());
@@ -437,7 +448,7 @@ namespace
         catch (fs::filesystem_error& ex)
         {
             ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.code().message() + fsExceptionPath(ex));
+            printWarning(ewiFile, rmFileErrorMsg + ": " + ex.what());
         }
         catch (exception& ex)
         {
@@ -458,7 +469,7 @@ namespace
             catch (fs::filesystem_error& ex)
             {
                 ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.code().message() + fsExceptionPath(ex));
+                printWarning(ewiFile, rmDirErrorMsg + ": " + ex.what());
             }
             catch (exception& ex)
             {
@@ -476,18 +487,13 @@ namespace
     }
 }
 
-potoroo::Result potoroo::processJob(const Job& job) noexcept
+Result potoroo::processJob(const Job& job) noexcept
 {
     Result r;
     fs::path inf;
     fs::path outf;
     string ewiFile;
     bool createdOutDir = false;
-
-#if !PRJ_DEBUG
-    printError("processor", "still in development, nothing changed on filesystem");
-    return 1;
-#endif
 
     try
     {
@@ -521,32 +527,68 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
                 if (fs::equivalent(inf, outf)) throw runtime_error("in and out files are the same");
             }
 
-            /*if copy:
-                if forced: r += !fs::copy_file(inf, outf, fs::copy_options::overwrite_existing)
-                else: r += !fs::copy_file(inf, outf, fs::copy_options::update_existing)
-            else*/
+
+
+            if (job.getMode() == JobMode::proc)
             {
-                // get lineEnding of inf
-                /* if LF */ r += caterpillarProc(inf, outf, job, ewiFile); /*
+                lineEnding ile = detectLineEnding(inf);
+
+                if (ile == lineEnding::error)
+                {
+                    ++r.warn;
+                    printWarning(ewiFile, "Unable to determine line ending, assuming LF");
+                    ile = lineEnding::LF;
+                }
+
+                if (ile == lineEnding::LF) r += caterpillarProc(inf, outf, job, ewiFile);
                 else
                 {
                     fs::path tmpProcDir(outf.parent_path() / ".potorooTemp");
-
                     fs::path infLF(tmpProcDir / (inf.filename().string() + ".infLF"));
                     fs::path outfLF(tmpProcDir / (outf.filename().string() + ".outfLF"));
 
-                    convertToLF(inf, infLF);
+                    fs::create_directories(tmpProcDir);
 
-                    r += caterpillarProc(infLF, outfLF, job, ewiFile);
+                    string errMsg;
+                    bool deleteTmpProcDir = true;
 
-                    if CRLR: convertToCRLF(outfLF, outf);
-                    if CR: convertToCR(outfLF, outf);
+                    if (convertLineEnding(inf, ile, infLF, lineEnding::LF, errMsg) == 0)
+                    {
+                        r += caterpillarProc(infLF, outfLF, job, ewiFile);
 
-                    delete(tmpProcDir);
-                } /**/
+                        if (r.err == 0)
+                        {
+                            if (convertLineEnding(outfLF, lineEnding::LF, outf, ile, errMsg) != 0)
+                            {
+                                deleteTmpProcDir = false;
+
+                                ++r.warn;
+                                printWarning("convert line ending", errMsg);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ++r.err;
+                        printError("convert line ending", errMsg);
+                    }
+
+                    if (deleteTmpProcDir) fs::remove_all(tmpProcDir);
+                }
             }
-
-            if (r.err > 0) r += rmOut(outf, ewiFile, createdOutDir);
+            else if (job.getMode() == JobMode::copy)
+            {
+                r += !fs::copy_file(inf, outf, fs::copy_options::update_existing);
+            }
+            else if (job.getMode() == JobMode::copyow)
+            {
+                r += !fs::copy_file(inf, outf, fs::copy_options::overwrite_existing);
+            }
+            else
+            {
+                ++r.err;
+                printError("processor", "invalid job mode");
+            }
         }
         catch (fs::filesystem_error& ex)
         {
@@ -576,10 +618,12 @@ potoroo::Result potoroo::processJob(const Job& job) noexcept
         printError(ewiFile, "###[@Werror@] " + to_string(r.warn) + " warnings");
     }
 
+    if (r.err > 0) r += rmOut(outf, ewiFile, createdOutDir);
+
     return r;
 }
 
-potoroo::Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
+Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
 {
 #if PRJ_DEBUG && 0
     cout << "===============\n" << "jobs:" << endl;

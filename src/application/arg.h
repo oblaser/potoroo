@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           14.02.2021
+\date           01.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -23,13 +23,17 @@ namespace potoroo
     const std::string argStr_tag = "-t";
     const std::string argStr_forceJf = "--force-jf";
     const std::string argStr_wError = "-Werror";
+    const std::string argStr_copy = "--copy";
+    const std::string argStr_copyow = "--copy-ow";
     const std::string argStr_help = "-h";
     const std::string argStr_help_alt = "--help";
     const std::string argStr_version = "-v";
     const std::string argStr_version_alt = "--version";
 
-    enum class argType
+    enum class ArgType
     {
+        argType_invalid,
+
         help,
         version,
         jobFile,
@@ -39,18 +43,18 @@ namespace potoroo
         tag,
         forceJf,
         wError,
-
-        argType_invalid
+        copy,
+        copyow
     };
 
-    enum class argProcResult
+    enum class ArgProcResult
     {
+        error,
+
         loadFile,
         process,
         printVersion,
-        printHelp,
-
-        error
+        printHelp
     };
 
     class Arg
@@ -59,7 +63,7 @@ namespace potoroo
         Arg();
         Arg(const std::string& arg);
 
-        argType getType() const;
+        ArgType getType() const;
         std::string getValue() const;
 
         void setValue(const std::string& value);
@@ -72,7 +76,7 @@ namespace potoroo
 #endif
 
     private:
-        argType type;
+        ArgType type;
         std::string value;
         bool validity;
     };
@@ -84,11 +88,11 @@ namespace potoroo
 
         void add(const Arg& arg);
         void clear();
-        bool contains(argType at) const;
+        bool contains(ArgType at) const;
         bool containsInvalid() const;
-        Arg get(argType at) const;
+        Arg get(ArgType at) const;
         size_t count() const;
-        size_t count(argType at) const;
+        size_t count(ArgType at) const;
 
 #if PRJ_DEBUG
         std::string dbgDump() const;
@@ -102,8 +106,8 @@ namespace potoroo
         static ArgList parse(const char* args);
     };
 
-    argProcResult argProc(ArgList& args);
-    argProcResult argProcJF(const ArgList& args, std::string& errMsg);
+    ArgProcResult argProc(ArgList& args);
+    ArgProcResult argProcJF(const ArgList& args, std::string& errMsg);
 }
 
 #endif // _CLIARG_H_

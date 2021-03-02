@@ -120,6 +120,7 @@
     <ClCompile Include="..\..\src\application\job.cpp" />
     <ClCompile Include="..\..\src\application\processor.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\middleware\util.cpp" />
     <ClCompile Include="..\..\src\middleware\version.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -127,6 +128,7 @@
     <ClInclude Include="..\..\src\middleware\cliTextFormat.h" />
     <ClInclude Include="..\..\src\application\job.h" />
     <ClInclude Include="..\..\src\application\processor.h" />
+    <ClInclude Include="..\..\src\middleware\util.h" />
     <ClInclude Include="..\..\src\middleware\version.h" />
     <ClInclude Include="..\..\src\project.h" />
   </ItemGroup>
