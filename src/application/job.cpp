@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           02.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -167,7 +167,14 @@ namespace
 
             fs::path jobfile(filename);
 
-            if (!fs::exists(jobfile)) throw runtime_error("not found");
+            if (!fs::exists(jobfile))
+            {
+#if PRJ_DEBUG
+                throw runtime_error("###\"" + fs::absolute(jobfile).string() + "\" -> \"" + fs::weakly_canonical(jobfile).string() + "\" not found");
+#else
+                throw runtime_error("not found");
+#endif
+            }
 
             jfs.exceptions(ios::failbit | ios::badbit | ios::eofbit);
             jfs.open(jobfile, ios::binary | ios::in);

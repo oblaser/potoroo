@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           02.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -301,12 +301,14 @@ lineEnding detectLineEnding(const std::filesystem::path& filepath)
 int convertLineEnding(const std::filesystem::path& inf, const std::filesystem::path& outf, lineEnding outfLineEnding)
 {
     lineEnding ile = detectLineEnding(inf);
-    return convertLineEnding(inf, ile, outf, outfLineEnding, string());
+    string deadEnd;
+    return convertLineEnding(inf, ile, outf, outfLineEnding, deadEnd);
 }
 
 int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding)
 {
-    return convertLineEnding(inf, infLineEnding, outf, outfLineEnding, string());
+    string deadEnd;
+    return convertLineEnding(inf, infLineEnding, outf, outfLineEnding, deadEnd);
 }
 
 int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding, std::string& errMsg)

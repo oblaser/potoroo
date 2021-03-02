@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           02.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -92,13 +92,13 @@ namespace
 #if PRJ_DEBUG
         if (pr > 0)
 #else
-        if (pr > 10)
+        if (pr > 6)
 #endif
         {
             cout << "\n   " << pr << endl;
 
 #ifndef PRJ_PLAT_WIN
-            cout << endl; // windows console ads en extra line automatically
+            cout << endl; // windows console ads an extra line automatically
 #endif
         }
     }
@@ -118,9 +118,14 @@ int main(int argc, char** argv)
     Arg a;
 
     a = Arg("-jf");
+
+#ifdef _DEBUG_ECLIPSE
+    a.setValue("../../test/system/processor/potorooJobs");
+#else
     a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
     a.setValue("../../../test/system/processor/potorooJobs");
     //a.setValue("../../../test/system/lineEndings/potorooJobs");
+#endif
     args.add(a);
 
     //args.add(Arg("--force-jf"));
