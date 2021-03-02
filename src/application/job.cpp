@@ -266,10 +266,10 @@ potoroo::Job::Job()
 potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError, JobMode jobMode)
     : tag(tag), wError(warningAsError), validity(true), mode(jobMode)
 {
-    try { inFile = (fs::absolute(inputFile)).string(); }
+    try { inFile = fs::path(inputFile).lexically_normal().string(); }
     catch (...) { inFile = string(inputFile); }
 
-    try { outFile = (fs::absolute(outputFile)).string(); }
+    try { outFile = fs::path(outputFile).lexically_normal().string(); }
     catch (...) { outFile = string(outputFile); }
 
     errorMsg.clear();

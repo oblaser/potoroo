@@ -116,6 +116,8 @@ int main(int argc, char** argv)
 
 #if PRJ_DEBUG && 1
     Arg a;
+
+#if 0 // jobfile
     a = Arg("-jf");
 #ifdef _DEBUG_ECLIPSE
     a.setValue("../../test/system/processor/potorooJobs");
@@ -124,17 +126,24 @@ int main(int argc, char** argv)
     a.setValue("../../../test/system/processor/potorooJobs");
     //a.setValue("../../../test/system/lineEndings/potorooJobs");
 #endif
-    //args.add(a);
+    args.add(a);
+#endif
 
 
+#if 1
+    a = Arg("-if");
+#ifdef _DEBUG_ECLIPSE
+    a.setValue("../../test/system/processor/js/index.js");
+#else
+    a.setValue("../../../test/system/processor/js/index.js");
+#endif
+    args.add(a);
+    a = Arg("-od");
+    a.setValue(".");
+    args.add(a);
 
-//    a = Arg("-if");
-//    a.setValue("../../test/system/processor/js/index.js");
-//    args.add(a);
-//    a = Arg("-od");
-//    a.setValue(".");
-//    args.add(a);
-
+    //args.add(Arg("--copy"));
+#endif
 
 
     //args.add(Arg("--force-jf"));

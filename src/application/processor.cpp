@@ -578,11 +578,19 @@ Result potoroo::processJob(const Job& job) noexcept
             }
             else if (job.getMode() == JobMode::copy)
             {
-                r += !fs::copy_file(inf, outf, fs::copy_options::update_existing);
+                bool fileCopied = fs::copy_file(inf, outf, fs::copy_options::update_existing);
+
+                if (!fileCopied) printInfo(ewiFile, "file not copied, it's up to date");
             }
             else if (job.getMode() == JobMode::copyow)
             {
-                r += !fs::copy_file(inf, outf, fs::copy_options::overwrite_existing);
+                bool fileCopied = fs::copy_file(inf, outf, fs::copy_options::overwrite_existing);
+
+                if (!fileCopied)
+                {
+                    ++r.err;
+                    printError(ewiFile, "file not copied");
+                }
             }
             else
             {
