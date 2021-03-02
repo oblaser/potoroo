@@ -1,7 +1,7 @@
 /*
 
 \author         Oliver Blaser
-\date           17.02.2021
+\date           01.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -51,7 +51,7 @@ namespace project
 //
 // invalid combinations
 //
-#if ((PRJ_PLAT_WIN32 || PRJ_PLAT_WIN64) && PRJ_PLAT_UNIX)
+#if ((PRJ_PLAT_WIN32 || PRJ_PLAT_WIN64 || PRJ_PLAT_WIN) && PRJ_PLAT_UNIX)
 #error invalid platform
 #endif
 

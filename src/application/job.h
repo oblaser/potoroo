@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           28.02.2021
+\date           01.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -26,11 +26,18 @@ namespace potoroo
     const std::string tagBash = "#//p";
     const std::string tagBatch = "@rem #p";
 
+    enum class JobMode
+    {
+        proc,
+        copy,
+        copyow
+    };
+
     class Job
     {
     public:
         Job();
-        Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError = false);
+        Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError = false, JobMode mode = JobMode::proc);
 
         void setValidity(bool validity);
         void setErrorMsg(const std::string& msg);
@@ -38,6 +45,7 @@ namespace potoroo
         std::string getInputFile() const;
         std::string getOutputFile() const;
         std::string getTag() const;
+        JobMode getMode() const;
         bool warningAsError() const;
 
         bool isValid() const;
@@ -49,6 +57,7 @@ namespace potoroo
         std::string inFile;
         std::string outFile;
         std::string tag;
+        JobMode mode;
         bool wError;
 
         bool validity = false;

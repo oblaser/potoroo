@@ -1,8 +1,6 @@
 ﻿# potoroo
 
-A script preprocessor, which enables you to use kind of compile switches in scrips.
-
-> In development, see 'dev' branch for latest code.
+A preprocessor for scripts or any text file.
 
 ## exapmles
 
@@ -12,7 +10,7 @@ See [processor test potorooJobs](./test/system/processor/potorooJobs) and [proce
 
 ```
 potoroo [-jf FILE] [--force-jf]
-potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [-Werror]
+potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [options]
 ```
 
 | arg | description |
@@ -23,11 +21,14 @@ potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [-Werror]
 | `-of FILE` | Output file |
 | `-od DIR` | Output directory (same filename) |
 | `-t TAG` | Specify the tag |
-| `-Werror` | Handles warnings as errors (only in processor, the jobfile parser is unaffected by this flag). Results in not writing the output file if any warning occured. |
-| `-h`, `--help` | Print help |
-| `-v`, `--version` | Print version |
 
-If no parameter or only `--force-jf` is provided the default jobfile "./potorooJobs" is processed.
+| option | description |
+|:---|:---|
+| `-Werror` | Handles warnings as errors (only in processor, the jobfile parser is unaffected by this option). Results in not writing the output file if any warning occured. |
+| `--copy` | Copy, replaces the existing file only if it is older than the input file |
+| `--copy-ow` | Copy, overwrites the existing file |
+
+If no parameter or only `--force-jf` is provided the default jobfile `./potorooJobs` is processed.
 
 
 ## jobfile
@@ -51,11 +52,8 @@ Each line is interpreted as a job. Paths in the jobfile are relative to its cont
 | `custom:CTAG` | `CTAG` |
 
 
-## preprocessor directives
-
-Sorted by priority (1. highest).
-
-#### 1. rm
+## preprocessor key words
+#### rm
 ```
 //#p rm
 deletes lines in between
@@ -64,22 +62,18 @@ the tags themselves
 //#p endrm
 ```
 
-#### 2. rmn
+#### rmn
 ```
 //#p rmn n
 ```
 Deletes n lines after this tag and the tag itself. n = 1..9
 
-#### 3. ins
+#### ins
 ```
 //#p ins c = Math.sqrt(a*a + b*b);
 ```
 Removes the tag wich results in adding a single line of code.
 
-## warnings and errors
-```
-(fileName | process):[line:[column:]] (warning | error): text
-```
 
 ---
 

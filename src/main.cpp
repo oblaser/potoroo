@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           17.02.2021
+\date           01.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -45,7 +45,7 @@ namespace
 
         cout << "Usage:" << endl;
         cout << "  potoroo [-jf FILE] [--force-jf]" << endl;
-        cout << "  potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [-Werror]" << endl;
+        cout << "  potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [options]" << endl;
         cout << endl;
         cout << endl;
         cout << "Arguments:" << endl;
@@ -56,12 +56,16 @@ namespace
         cout << left << setw(lw) << "  " + argStr_of + " FILE" << "output file" << endl;
         cout << left << setw(lw) << "  " + argStr_od + " DIR" << "output directory (same filename)" << endl;
         cout << left << setw(lw) << "  " + argStr_tag + " TAG" << "specify the tag" << endl;
-        cout << left << setw(lw) << "  " + argStr_wError << "handles warnings as errors (only in processor, the jobfile parser is" << endl;
-        cout << left << setw(lw) << "  " << "unaffected by this flag).Results in not writing the output file if" << endl;
-        cout << left << setw(lw) << "  " << "any warning occured" << endl;
         cout << endl;
         cout << left << setw(lw) << "  " + argStr_help + ", " + argStr_help_alt << "prints this help text" << endl;
         cout << left << setw(lw) << "  " + argStr_version + ", " + argStr_version_alt << "prints version info" << endl;
+        cout << endl;
+        cout << endl;
+        cout << "Options:" << endl;
+        cout << left << setw(lw) << "  " + argStr_wError << "handles warnings as errors (only in processor, the jobfile parser is unaffected" << endl;
+        cout << left << setw(lw) << "  " << "by this option). Results in not writing the output file if any warning occured" << endl;
+        cout << left << setw(lw) << "  " + argStr_copy << "copy, replaces the existing file only if it is older than the input file" << endl;
+        cout << left << setw(lw) << "  " + argStr_copyow << "copy, overwrites the existing file" << endl;
         cout << endl;
         cout << endl;
         cout << "TAG values:" << endl;
@@ -116,7 +120,7 @@ int main(int argc, char** argv)
     a = Arg("-jf");
     a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
     a.setValue("../../../test/system/processor/potorooJobs");
-    a.setValue("../../../test/system/lineEndings/potorooJobs");
+    //a.setValue("../../../test/system/lineEndings/potorooJobs");
     args.add(a);
 
     //args.add(Arg("--force-jf"));
@@ -125,16 +129,16 @@ int main(int argc, char** argv)
     //args.add(Arg("-h"));
 #endif
 
-    argProcResult apr = argProc(args);
+    ArgProcResult apr = argProc(args);
 
-    if (apr == argProcResult::loadFile)
+    if (apr == ArgProcResult::loadFile)
     {
-        string jobfile = args.get(argType::jobFile).getValue();
+        string jobfile = args.get(ArgType::jobFile).getValue();
         vector<Job> jobs;
         Result pr = Job::parseFile(jobfile, jobs);
 
         if ((pr.err == 0) ||
-            (args.contains(argType::forceJf) && (pr.err > 0)) // only force if no file IO error
+            (args.contains(ArgType::forceJf) && (pr.err > 0)) // only force if no file IO error
             )
         {
             Result cwdr = changeWD(jobfile);
@@ -159,19 +163,19 @@ int main(int argc, char** argv)
 
         printProcessorResult(pr);
     }
-    else if (apr == argProcResult::process)
+    else if (apr == ArgProcResult::process)
     {
         Result pr = processJob(Job::parseArgs(args));
         printProcessorResult(pr);
         if (pr.err) result = rcNErrorBase + pr.err;
         else result = rcOK;
     }
-    else if (apr == argProcResult::printHelp)
+    else if (apr == ArgProcResult::printHelp)
     {
         printHelp();
         result = rcOK;
     }
-    else if (apr == argProcResult::printVersion)
+    else if (apr == ArgProcResult::printVersion)
     {
         printVersion();
         result = rcOK;
@@ -184,7 +188,7 @@ int main(int argc, char** argv)
 
 #if PRJ_DEBUG && 1
     cout << "return " << result << endl;
-    getc(stdin);
+    int ___dbg_getc = getc(stdin);
 #endif
 
     if (result > rcMax) result = rcMax;

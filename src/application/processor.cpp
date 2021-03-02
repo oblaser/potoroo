@@ -113,7 +113,7 @@ namespace
 
 
 
-#if PRJ_DEBUG
+#if PRJ_DEBUG && 0
     const size_t pbSizeMin = 200;
 #else
     const size_t pbSizeMin = 100 * 1024; // 100k
@@ -448,7 +448,7 @@ namespace
         catch (fs::filesystem_error& ex)
         {
             ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.code().message() + fsExceptionPath(ex));
+            printWarning(ewiFile, rmFileErrorMsg + ": " + ex.what());
         }
         catch (exception& ex)
         {
@@ -469,7 +469,7 @@ namespace
             catch (fs::filesystem_error& ex)
             {
                 ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.code().message() + fsExceptionPath(ex));
+                printWarning(ewiFile, rmDirErrorMsg + ": " + ex.what());
             }
             catch (exception& ex)
             {
@@ -527,10 +527,9 @@ Result potoroo::processJob(const Job& job) noexcept
                 if (fs::equivalent(inf, outf)) throw runtime_error("in and out files are the same");
             }
 
-            /*if copy:
-                if forced: r += !fs::copy_file(inf, outf, fs::copy_options::overwrite_existing)
-                else: r += !fs::copy_file(inf, outf, fs::copy_options::update_existing)
-            else*/
+
+
+            if (job.getMode() == JobMode::proc)
             {
                 lineEnding ile = detectLineEnding(inf);
 
@@ -577,8 +576,19 @@ Result potoroo::processJob(const Job& job) noexcept
                     if (deleteTmpProcDir) fs::remove_all(tmpProcDir);
                 }
             }
-
-            if (r.err > 0) r += rmOut(outf, ewiFile, createdOutDir);
+            else if (job.getMode() == JobMode::copy)
+            {
+                r += !fs::copy_file(inf, outf, fs::copy_options::update_existing);
+            }
+            else if (job.getMode() == JobMode::copyow)
+            {
+                r += !fs::copy_file(inf, outf, fs::copy_options::overwrite_existing);
+            }
+            else
+            {
+                ++r.err;
+                printError("processor", "invalid job mode");
+            }
         }
         catch (fs::filesystem_error& ex)
         {
@@ -589,7 +599,7 @@ Result potoroo::processJob(const Job& job) noexcept
 #else
             printError(ewiFile, ex.code().message() + fsExceptionPath(ex));
 #endif
-    }
+        }
         catch (exception& ex)
         {
             ++r.err;
@@ -600,13 +610,15 @@ Result potoroo::processJob(const Job& job) noexcept
             ++r.err;
             printError(ewiFile, "unknown");
         }
-}
+    }
 
     if (job.warningAsError() && (r.warn > 0))
     {
         ++r.err;
         printError(ewiFile, "###[@Werror@] " + to_string(r.warn) + " warnings");
     }
+
+    if (r.err > 0) r += rmOut(outf, ewiFile, createdOutDir);
 
     return r;
 }

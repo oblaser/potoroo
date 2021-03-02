@@ -87,11 +87,7 @@ Result changeWD(const std::string& jobfile)
     }
     catch (fs::filesystem_error& ex)
     {
-#if PRJ_DEBUG
-        printEWI(procStr, ex.what(), 0, 0, 0, 0);
-#else
         printEWI(procStr, ex.code().message() + fsExceptionPath(ex), 0, 0, 0, 0);
-#endif
     }
     catch (exception& ex)
     {

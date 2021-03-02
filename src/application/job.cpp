@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           28.02.2021
+\date           01.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -252,12 +252,12 @@ namespace
 
 
 potoroo::Job::Job()
-    : wError(false), validity(false), errorMsg("unset")
+    : wError(false), validity(false), errorMsg("unset"), mode(JobMode::proc)
 {
 }
 
-potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError)
-    : tag(tag), wError(warningAsError), validity(true)
+potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError, JobMode jobMode)
+    : tag(tag), wError(warningAsError), validity(true), mode(jobMode)
 {
     try { inFile = fs::path(inputFile).lexically_normal().string(); }
     catch (...) { inFile = string(inputFile); }
@@ -294,6 +294,11 @@ std::string potoroo::Job::getTag() const
     return tag;
 }
 
+JobMode potoroo::Job::getMode() const
+{
+    return mode;
+}
+
 bool potoroo::Job::warningAsError() const
 {
     return wError;
@@ -311,9 +316,15 @@ std::string potoroo::Job::getErrorMsg() const
 
 std::ostream& potoroo::operator<<(std::ostream& os, const Job& j)
 {
-    os << "\"" << j.getInputFile() << "\" \"" << j.getOutputFile() << "\" ";
-    os << "\"" << j.getTag() << "\"";
-    os << (j.warningAsError() ? " Werror" : "");
+    os << "\"" << j.getInputFile() << "\" \"" << j.getOutputFile() << "\"";
+
+    if (j.getMode() == JobMode::proc) os << " \"" << j.getTag() << "\"";
+    else if (j.getMode() == JobMode::copy) os << " copy";
+    else if (j.getMode() == JobMode::copyow) os << " copy-ow";
+    else os << " #invalid job mode#";
+
+    if (j.warningAsError()) os << " Werror";
+
     return os;
 }
 
@@ -331,7 +342,7 @@ Result potoroo::Job::parseFile(const std::string& filename, std::vector<Job>& jo
 {
     vector<JobFileLine> line;
 
-#if PRJ_DEBUG & 0
+#if PRJ_DEBUG && 0
     /*char* line[] =
     {
         "-if \"./a dir/asdf.ext\"  \t  -od ../../000\t-Werror",
@@ -368,10 +379,10 @@ Result potoroo::Job::parseFile(const std::string& filename, std::vector<Job>& jo
         ArgList args = ArgList::parse(line[i].data.c_str());
 
         string aprErrMsg = "";
-        argProcResult apr = argProcJF(args, aprErrMsg);
+        ArgProcResult apr = argProcJF(args, aprErrMsg);
         Job job = Job::parseArgs(args);
 
-        if (apr != argProcResult::process)
+        if (apr != ArgProcResult::process)
         {
             ++r.err;
             printError("jobfile", aprErrMsg, line[i].line);
@@ -396,7 +407,7 @@ Result potoroo::Job::parseFile(const std::string& filename, std::vector<Job>& jo
 
 Job potoroo::Job::parseArgs(const ArgList& args)
 {
-    string in = args.get(argType::inFile).getValue();
+    string in = args.get(ArgType::inFile).getValue();
     fs::path inPath;
     string out;
     string tag;
@@ -405,21 +416,21 @@ Job potoroo::Job::parseArgs(const ArgList& args)
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
 
-    if (args.contains(argType::outFile))
+    if (args.contains(ArgType::outFile))
     {
-        out = args.get(argType::outFile).getValue();
+        out = args.get(ArgType::outFile).getValue();
     }
     else
     {
         try
         {
-            fs::path p(args.get(argType::outDir).getValue());
+            fs::path p(args.get(ArgType::outDir).getValue());
             p /= inPath.filename();
             out = p.string();
         }
         catch (...)
         {
-            out = args.get(argType::outDir).getValue();
+            out = args.get(ArgType::outDir).getValue();
             // further exception handling in processor
         }
     }
@@ -429,10 +440,10 @@ Job potoroo::Job::parseArgs(const ArgList& args)
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
 
-    if (args.get(argType::tag).getValue().compare(0, 7, "custom:") == 0) tag = string(args.get(argType::tag).getValue(), 7);
-    else if (tagCondCpp(ext) || (args.get(argType::tag).getValue() == "cpp")) tag = tagCpp;
-    else if (tagCondBash(ext) || (args.get(argType::tag).getValue() == "bash")) tag = tagBash;
-    else if (tagCondBatch(ext) || (args.get(argType::tag).getValue() == "batch")) tag = tagBatch;
+    if (args.get(ArgType::tag).getValue().compare(0, 7, "custom:") == 0) tag = string(args.get(ArgType::tag).getValue(), 7);
+    else if (tagCondCpp(ext) || (args.get(ArgType::tag).getValue() == "cpp")) tag = tagCpp;
+    else if (tagCondBash(ext) || (args.get(ArgType::tag).getValue() == "bash")) tag = tagBash;
+    else if (tagCondBatch(ext) || (args.get(ArgType::tag).getValue() == "batch")) tag = tagBatch;
     else
     {
         Job j;
@@ -449,7 +460,11 @@ Job potoroo::Job::parseArgs(const ArgList& args)
         return j;
     }
 
-    try { return Job(inPath.string(), out, tag, args.contains(argType::wError)); }
+    JobMode mode = JobMode::proc;
+    if (args.contains(ArgType::copy)) mode = JobMode::copy;
+    if (args.contains(ArgType::copyow)) mode = JobMode::copyow;
+
+    try { return Job(inPath.string(), out, tag, args.contains(ArgType::wError), mode); }
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
 }
