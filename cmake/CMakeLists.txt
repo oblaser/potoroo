@@ -1,6 +1,6 @@
 #
 # author        Oliver Blaser
-# date          15.02.2021
+# date          18.02.2021
 # copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 #
 
@@ -11,13 +11,14 @@ project(potoroo)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-include_directories(../../src/)
+include_directories(../src/)
 
-add_executable(potoroo
-../../src/main.cpp
-../../src/application/arg.cpp
-../../src/application/job.cpp
-../../src/application/processor.cpp
-../../src/middleware/cliTextFormat.cpp
-../../src/middleware/version.cpp
+add_executable(
+potoroo
+../src/main.cpp
+../src/application/arg.cpp
+../src/application/job.cpp
+../src/application/processor.cpp
+../src/middleware/cliTextFormat.cpp
+../src/middleware/version.cpp
 )
