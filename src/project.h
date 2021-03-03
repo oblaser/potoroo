@@ -1,7 +1,7 @@
 /*
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           03.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -17,7 +17,9 @@ namespace project
 }
 
 
+
 #define PRJ_VERSION (project::version)
+#define PRJ_VERSION_PRERELEASE (1)
 
 
 

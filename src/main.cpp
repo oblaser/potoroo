@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           02.03.2021
+\date           03.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -78,8 +78,13 @@ namespace
 
     void printVersion()
     {
-        cout << "potoroo " << PRJ_VERSION << endl;
-        cout << endl;
+        cout << "potoroo " << PRJ_VERSION ;
+
+#if PRJ_VERSION_PRERELEASE
+        cout << " " << sgr(SGRFGC_BRIGHT_MAGENTA) << "pre-release" << sgr(SGR_RESET);
+#endif
+
+        cout << endl<< endl;
         cout << "project page: <https://github.com/oblaser/potoroo>" << endl;
         cout << endl;
         cout << "Copyright (c) 2021 Oliver Blaser." << endl;
@@ -111,8 +116,6 @@ namespace
 int main(int argc, char** argv)
 {
     int result = rcInit;
-
-    cout << "   " << sgr(SGRFGC_BRIGHT_BLACK) << "pre-release " << PRJ_VERSION << sgr(SGR_RESET) << endl;
 
     ArgList args = ArgList::parse(argc, argv);
 
