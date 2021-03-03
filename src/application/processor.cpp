@@ -580,7 +580,7 @@ Result potoroo::processJob(const Job& job) noexcept
             {
                 bool fileCopied = fs::copy_file(inf, outf, fs::copy_options::update_existing);
 
-#if PRJ_DEBUG
+#if PRJ_DEBUG && 0
                 if (!fileCopied) printDbg(ewiFile, "file not copied, it's up to date");
 #endif
             }

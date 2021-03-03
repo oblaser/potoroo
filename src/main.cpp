@@ -84,6 +84,10 @@ namespace
         cout << " " << sgr(SGRFGC_BRIGHT_MAGENTA) << "pre-release" << sgr(SGR_RESET);
 #endif
 
+#if PRJ_DEBUG
+        cout << " " << sgr(SGRFGC_BRIGHT_RED) << " DEBUG" << sgr(SGR_RESET);
+#endif
+
         cout << endl<< endl;
         cout << "project page: <https://github.com/oblaser/potoroo>" << endl;
         cout << endl;
@@ -122,7 +126,7 @@ int main(int argc, char** argv)
 #if PRJ_DEBUG && 1
     Arg a;
 
-#if 0 // jobfile
+#if 1 // jobfile
     a = Arg("-jf");
 #ifdef _DEBUG_ECLIPSE
     a.setValue("../../test/system/processor/potorooJobs");
@@ -135,7 +139,7 @@ int main(int argc, char** argv)
 #endif
 
 
-#if 1 // ./potoroo -if ../../test/system/processor/js/index.js -od .
+#if 0 // ./potoroo -if ../../test/system/processor/js/index.js -od .
     a = Arg("-if");
 #ifdef _DEBUG_ECLIPSE
     a.setValue("../../test/system/processor/js/index.js");
