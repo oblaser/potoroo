@@ -89,7 +89,7 @@ namespace
 
     void printProcessorResult(const Result& pr)
     {
-#if PRJ_DEBUG
+#if PRJ_DEBUG && 0
         if (pr > 0)
 #else
         if (pr > 6)
@@ -111,6 +111,8 @@ namespace
 int main(int argc, char** argv)
 {
     int result = rcInit;
+
+    cout << "   " << sgr(SGRFGC_BRIGHT_BLACK) << "pre-release " << PRJ_VERSION << sgr(SGR_RESET) << endl;
 
     ArgList args = ArgList::parse(argc, argv);
 
@@ -142,7 +144,8 @@ int main(int argc, char** argv)
     a.setValue(".");
     args.add(a);
 
-    //args.add(Arg("--copy"));
+    //args.add(Arg("-Werror"));
+    //args.add(Arg("--copy-ow"));
 #endif
 
 

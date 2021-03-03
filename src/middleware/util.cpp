@@ -63,15 +63,18 @@ bool operator==(const Result& left, int right)
 
 std::ostream& operator<<(std::ostream& os, const Result& v)
 {
-    os << "errors: ";
-    if (v.err != 0) os << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD);
-    os << v.err;
-    if (v.err != 0) os << sgr(SGR_RESET);
+    if (v.err != 0)
+    {
+        os << sgr(SGRFGC_BRIGHT_RED) << v.err << sgr(SGR_RESET) << " error";
+        if ((v.err > 1) || (v.err < (-1))) os << "s";
+        if (v.warn != 0) os << " and ";
+    }
 
-    os << "   warnings: ";
-    if (v.warn != 0) os << sgr(SGRFGC_BRIGHT_YELLOW);
-    os << v.warn;
-    if (v.warn != 0) os << sgr(SGR_RESET);
+    if (v.warn != 0)
+    {
+        os << sgr(SGRFGC_BRIGHT_YELLOW) << v.warn << sgr(SGR_RESET) << " warning";
+        if ((v.warn > 1) || (v.warn < (-1))) os << "s";
+    }
 
     return os;
 }
@@ -355,7 +358,7 @@ int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding
                     else
                     {
                         errMsg = "in file IO error: ";
-                        
+
                         if (ifs.bad()) errMsg += "badbit";
                         else if (ifs.fail()) errMsg += "failbit";
                         else errMsg += "unknown";
