@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           02.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -497,13 +497,13 @@ Result potoroo::processJob(const Job& job) noexcept
 
     try
     {
-        inf = fs::path(job.getInputFile());
-        outf = fs::path(job.getOutputFile());
+        inf = fs::absolute(job.getInputFile());
+        outf = fs::absolute(job.getOutputFile());
     }
-    catch (fs::filesystem_error& ex)
+    catch (exception& ex)
     {
         ++r.err;
-        printError("", ex.code().message() + fsExceptionPath(ex));
+        printError("", ex.what());
     }
     catch (...)
     {
@@ -520,12 +520,12 @@ Result potoroo::processJob(const Job& job) noexcept
         {
             if (!fs::exists(inf)) throw runtime_error("file does not exist");
 
-            createdOutDir = fs::create_directories(outf.parent_path());
-
             if (fs::exists(outf))
             {
                 if (fs::equivalent(inf, outf)) throw runtime_error("in and out files are the same");
             }
+
+            createdOutDir = fs::create_directories(outf.parent_path());
 
 
 
@@ -578,11 +578,21 @@ Result potoroo::processJob(const Job& job) noexcept
             }
             else if (job.getMode() == JobMode::copy)
             {
-                r += !fs::copy_file(inf, outf, fs::copy_options::update_existing);
+                bool fileCopied = fs::copy_file(inf, outf, fs::copy_options::update_existing);
+
+#if PRJ_DEBUG
+                if (!fileCopied) printDbg(ewiFile, "file not copied, it's up to date");
+#endif
             }
             else if (job.getMode() == JobMode::copyow)
             {
-                r += !fs::copy_file(inf, outf, fs::copy_options::overwrite_existing);
+                bool fileCopied = fs::copy_file(inf, outf, fs::copy_options::overwrite_existing);
+
+                if (!fileCopied)
+                {
+                    ++r.err;
+                    printError(ewiFile, "file not copied");
+                }
             }
             else
             {
@@ -590,20 +600,14 @@ Result potoroo::processJob(const Job& job) noexcept
                 printError("processor", "invalid job mode");
             }
         }
-        catch (fs::filesystem_error& ex)
-        {
-            ++r.err;
-
-#if PRJ_DEBUG
-            printError(ewiFile, ex.what());
-#else
-            printError(ewiFile, ex.code().message() + fsExceptionPath(ex));
-#endif
-        }
         catch (exception& ex)
         {
             ++r.err;
             printError(ewiFile, ex.what());
+
+#if PRJ_DEBUG
+            int ___dbg_breakpoint = 0;
+#endif
         }
         catch (...)
         {

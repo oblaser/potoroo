@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           28.02.2021
+\date           02.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -66,8 +66,6 @@ enum class lineEnding
 
 
 Result changeWD(const std::string& jobfile);
-
-std::string fsExceptionPath(const std::filesystem::filesystem_error& ex);
 
 void printEWI(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0, int ewi = 0x7FFFFFFF, int style = 0x7FFFFFFF);
 

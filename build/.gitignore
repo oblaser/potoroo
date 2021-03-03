@@ -1,0 +1,5 @@
+/cmake/*
+!/cmake/CMakeLists.txt
+
+/make/*
+!/make/makefile

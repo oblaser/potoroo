@@ -1,13 +1,14 @@
 /*!
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           02.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
 
 #include "util.h"
 
+#include <filesystem>
 #include <fstream>
 
 #include "cliTextFormat.h"
@@ -62,10 +63,18 @@ bool operator==(const Result& left, int right)
 
 std::ostream& operator<<(std::ostream& os, const Result& v)
 {
-    os << "errors: ";
-    os << sgr(SGRFGC_BRIGHT_RED) << v.err << sgr(SGR_RESET);
-    os << "   warnings: ";
-    os << sgr(SGRFGC_BRIGHT_YELLOW) << v.warn << sgr(SGR_RESET);
+    if (v.err != 0)
+    {
+        os << sgr(SGRFGC_BRIGHT_RED) << v.err << sgr(SGR_RESET) << " error";
+        if ((v.err > 1) || (v.err < (-1))) os << "s";
+        if (v.warn != 0) os << " and ";
+    }
+
+    if (v.warn != 0)
+    {
+        os << sgr(SGRFGC_BRIGHT_YELLOW) << v.warn << sgr(SGR_RESET) << " warning";
+        if ((v.warn > 1) || (v.warn < (-1))) os << "s";
+    }
 
     return os;
 }
@@ -85,10 +94,6 @@ Result changeWD(const std::string& jobfile)
         fs::current_path(fs::path(jobfile).parent_path());
         r = 0;
     }
-    catch (fs::filesystem_error& ex)
-    {
-        printEWI(procStr, ex.code().message() + fsExceptionPath(ex), 0, 0, 0, 0);
-    }
     catch (exception& ex)
     {
         printEWI(procStr, ex.what(), 0, 0, 0, 0);
@@ -99,21 +104,6 @@ Result changeWD(const std::string& jobfile)
     }
 
     return r;
-}
-
-std::string fsExceptionPath(const std::filesystem::filesystem_error& ex)
-{
-    string path1 = ex.path1().string();
-    string path2 = ex.path2().string();
-    string path = "";
-
-    if ((path1.length() >= 0) || (path2.length() >= 0))
-    {
-        if (path2.length() == 0) path += " \"" + path1 + "\"";
-        else path += "\npath1: \"" + path1 + "\"\npath2: \"" + path2 + "\"";
-    }
-
-    return path;
 }
 
 //! @brief Prints a formatted Error, Warning or Info message
@@ -301,12 +291,14 @@ lineEnding detectLineEnding(const std::filesystem::path& filepath)
 int convertLineEnding(const std::filesystem::path& inf, const std::filesystem::path& outf, lineEnding outfLineEnding)
 {
     lineEnding ile = detectLineEnding(inf);
-    return convertLineEnding(inf, ile, outf, outfLineEnding, string());
+    string deadEnd;
+    return convertLineEnding(inf, ile, outf, outfLineEnding, deadEnd);
 }
 
 int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding)
 {
-    return convertLineEnding(inf, infLineEnding, outf, outfLineEnding, string());
+    string deadEnd;
+    return convertLineEnding(inf, infLineEnding, outf, outfLineEnding, deadEnd);
 }
 
 int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding, std::string& errMsg)
@@ -366,7 +358,7 @@ int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding
                     else
                     {
                         errMsg = "in file IO error: ";
-                        
+
                         if (ifs.bad()) errMsg += "badbit";
                         else if (ifs.fail()) errMsg += "failbit";
                         else errMsg += "unknown";

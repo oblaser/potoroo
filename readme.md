@@ -1,6 +1,6 @@
 ﻿# potoroo
 
-A preprocessor for scripts or any text file.
+A preprocessor for scripts or any other text file.
 
 ## exapmles
 
