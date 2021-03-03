@@ -81,7 +81,7 @@ namespace
         cout << "potoroo " << PRJ_VERSION ;
 
 #if PRJ_VERSION_PRERELEASE
-        cout << " " << sgr(SGRFGC_BRIGHT_MAGENTA) << "pre-release" << sgr(SGR_RESET);
+        cout << " " << sgr(SGRFGC_BRIGHT_MAGENTA) << "pre-release" << sgr(SGR_RESET) << " built at " << __DATE__ << " " << __TIME__;
 #endif
 
 #if PRJ_DEBUG
@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 
     //args.add(Arg("--force-jf"));
 
-    //args.add(Arg("-v"));
+    args.add(Arg("-v"));
     //args.add(Arg("-h"));
 #endif
 
