@@ -64,9 +64,14 @@ bool operator==(const Result& left, int right)
 std::ostream& operator<<(std::ostream& os, const Result& v)
 {
     os << "errors: ";
-    os << sgr(SGRFGC_BRIGHT_RED) << v.err << sgr(SGR_RESET);
+    if (v.err != 0) os << sgr(SGRFGC_BRIGHT_RED, SGR_BOLD);
+    os << v.err;
+    if (v.err != 0) os << sgr(SGR_RESET);
+
     os << "   warnings: ";
-    os << sgr(SGRFGC_BRIGHT_YELLOW) << v.warn << sgr(SGR_RESET);
+    if (v.warn != 0) os << sgr(SGRFGC_BRIGHT_YELLOW);
+    os << v.warn;
+    if (v.warn != 0) os << sgr(SGR_RESET);
 
     return os;
 }

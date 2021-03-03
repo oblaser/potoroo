@@ -497,8 +497,8 @@ Result potoroo::processJob(const Job& job) noexcept
 
     try
     {
-        inf = fs::path(job.getInputFile());
-        outf = fs::path(job.getOutputFile());
+        inf = fs::absolute(job.getInputFile());
+        outf = fs::absolute(job.getOutputFile());
     }
     catch (exception& ex)
     {
@@ -580,7 +580,9 @@ Result potoroo::processJob(const Job& job) noexcept
             {
                 bool fileCopied = fs::copy_file(inf, outf, fs::copy_options::update_existing);
 
-                if (!fileCopied) printInfo(ewiFile, "file not copied, it's up to date");
+#if PRJ_DEBUG
+                if (!fileCopied) printDbg(ewiFile, "file not copied, it's up to date");
+#endif
             }
             else if (job.getMode() == JobMode::copyow)
             {

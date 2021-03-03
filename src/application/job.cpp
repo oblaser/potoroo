@@ -240,7 +240,6 @@ namespace
         catch (exception& ex)
         {
             printError(procStr, ex.what());
-            cout << endl;
             result = -1;
         }
         catch (...)

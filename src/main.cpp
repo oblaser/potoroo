@@ -130,7 +130,7 @@ int main(int argc, char** argv)
 #endif
 
 
-#if 1
+#if 1 // ./potoroo -if ../../test/system/processor/js/index.js -od .
     a = Arg("-if");
 #ifdef _DEBUG_ECLIPSE
     a.setValue("../../test/system/processor/js/index.js");
