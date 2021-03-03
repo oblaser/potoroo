@@ -1,6 +1,6 @@
 #
 # author         Oliver Blaser
-# date           02.03.2021
+# date           03.03.2021
 # copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 #
 
@@ -12,6 +12,8 @@ LFLAGS = -O3 -pedantic
 
 OBJS = main.o arg.o job.o processor.o cliTextFormat.o util.o version.o
 EXE = potoroo
+
+BUILDDATE = $(shell date +"%Y-%m-%d-%H-%M")
 
 
 
@@ -51,6 +53,15 @@ run: $(EXE)
 	@echo -e "\033[94m--================# run #================--\033[39m"
 	./$(EXE) -v
 
+release: $(EXE)
+	tar -czf potoroo_$(BUILDDATE).tar.gz potoroo
+
 clean:
 	rm $(OBJS)
 	rm $(EXE)
+
+help:
+	@echo -e "possible targets:"
+	@echo -e "- executables   \033[94m$(EXE) all\033[39m"
+	@echo -e "- objects       \033[94m$(OBJS)\033[39m"
+	@echo -e "- commands      \033[94mrun release clean help\033[39m"
