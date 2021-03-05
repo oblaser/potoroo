@@ -168,7 +168,7 @@ int main(int argc, char** argv)
 
     //args.add(Arg("--force-jf"));
 
-    args.add(Arg("-v"));
+    //args.add(Arg("-v"));
     //args.add(Arg("-h"));
 #endif
 
