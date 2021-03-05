@@ -446,29 +446,32 @@ Job potoroo::Job::parseArgs(const ArgList& args)
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
 
-    if (args.get(ArgType::tag).getValue().compare(0, 7, "custom:") == 0) tag = string(args.get(ArgType::tag).getValue(), 7);
-    else if (tagCondCpp(ext) || (args.get(ArgType::tag).getValue() == "cpp")) tag = tagCpp;
-    else if (tagCondBash(ext) || (args.get(ArgType::tag).getValue() == "bash")) tag = tagBash;
-    else if (tagCondBatch(ext) || (args.get(ArgType::tag).getValue() == "batch")) tag = tagBatch;
-    else
-    {
-        Job j;
-        j.setValidity(false);
-        j.setErrorMsg("unable to determine tag");
-        return j;
-    }
-
-    if (tag.length() > 15)
-    {
-        Job j;
-        j.setValidity(false);
-        j.setErrorMsg("tag too long");
-        return j;
-    }
-
     JobMode mode = JobMode::proc;
     if (args.contains(ArgType::copy)) mode = JobMode::copy;
     if (args.contains(ArgType::copyow)) mode = JobMode::copyow;
+
+    if (mode == JobMode::proc)
+    {
+        if (args.get(ArgType::tag).getValue().compare(0, 7, "custom:") == 0) tag = string(args.get(ArgType::tag).getValue(), 7);
+        else if (tagCondCpp(ext) || (args.get(ArgType::tag).getValue() == "cpp")) tag = tagCpp;
+        else if (tagCondBash(ext) || (args.get(ArgType::tag).getValue() == "bash")) tag = tagBash;
+        else if (tagCondBatch(ext) || (args.get(ArgType::tag).getValue() == "batch")) tag = tagBatch;
+        else
+        {
+            Job j;
+            j.setValidity(false);
+            j.setErrorMsg("unable to determine tag");
+            return j;
+        }
+    }
+
+    if ((mode == JobMode::proc) && ((tag.length() > 15) || (tag.length() < 3)))
+    {
+        Job j;
+        j.setValidity(false);
+        j.setErrorMsg("invalid tag length");
+        return j;
+    }
 
     try { return Job(inPath.string(), out, tag, args.contains(ArgType::wError), mode); }
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
