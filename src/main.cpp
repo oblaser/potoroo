@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           03.03.2021
+\date           05.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -78,17 +78,27 @@ namespace
 
     void printVersion()
     {
-        cout << "potoroo " << PRJ_VERSION ;
+        cout << "potoroo " << PRJ_VERSION;
 
 #if PRJ_VERSION_PRERELEASE
-        cout << " " << sgr(SGRFGC_BRIGHT_MAGENTA) << "pre-release" << sgr(SGR_RESET) << " built at " << __DATE__ << " " << __TIME__;
+        cout << " " << sgr(SGRFGC_BRIGHT_MAGENTA) << "pre-release" << sgr(SGR_RESET);
+
+#define VERSION_PRERELEASE_TYPE 0
+
+#if (VERSION_PRERELEASE_TYPE == 1)
+        cout << " built tag " << "TAG";
+#elif (VERSION_PRERELEASE_TYPE == 2)
+        cout << " built commit " << "COMMIT-HASH";
+#else
+        cout << " built at " << __DATE__ << " " << __TIME__;
+#endif
 #endif
 
 #if PRJ_DEBUG
-        cout << " " << sgr(SGRFGC_BRIGHT_RED) << " DEBUG" << sgr(SGR_RESET);
+        cout << "   " << sgr(SGRFGC_BRIGHT_RED) << "DEBUG" << sgr(SGR_RESET);
 #endif
 
-        cout << endl<< endl;
+        cout << endl << endl;
         cout << "project page: <https://github.com/oblaser/potoroo>" << endl;
         cout << endl;
         cout << "Copyright (c) 2021 Oliver Blaser." << endl;
@@ -158,7 +168,7 @@ int main(int argc, char** argv)
 
     //args.add(Arg("--force-jf"));
 
-    //args.add(Arg("-v"));
+    args.add(Arg("-v"));
     //args.add(Arg("-h"));
 #endif
 

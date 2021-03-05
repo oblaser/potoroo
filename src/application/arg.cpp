@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           05.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -349,7 +349,7 @@ ArgList potoroo::ArgList::parse(const char* args)
     {
         *(argv + i) = new char[list[i - 1].size()];
 
-        for (int j = 0; j < list[i - 1].size(); ++j) *((*(argv + i)) + j) = list[i - 1][j];
+        for (size_t j = 0; j < list[i - 1].size(); ++j) *((*(argv + i)) + j) = list[i - 1][j];
         //copy(list[i - 1].begin(), list[i - 1].end(), *(argv + i));
 
 #if PRJ_DEBUG

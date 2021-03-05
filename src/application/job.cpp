@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           02.03.2021
+\date           05.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -164,6 +164,7 @@ namespace
             ifstream jfs;
 
             size_t fileSize = 0;
+            streampos fileSizeL = 0;
 
             fs::path jobfile(filename);
 
@@ -180,8 +181,14 @@ namespace
             jfs.open(jobfile, ios::binary | ios::in);
 
             jfs.seekg(0, ios::end);
-            fileSize = jfs.tellg();
+            fileSizeL = jfs.tellg();
             jfs.seekg(0, ios::beg);
+
+            if (fileSizeL > static_cast<size_t>(-1))
+            {
+                throw runtime_error("file too big");
+            }
+            else fileSize = static_cast<size_t>(fileSizeL);
 
             if (fileSize == 0)
             {
