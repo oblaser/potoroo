@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           04.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -23,7 +23,7 @@ namespace potoroo
     const char jfcc = '#';
 
     const std::string tagCpp = "//#p";
-    const std::string tagBash = "#//p";
+    const std::string tagBash = "##p";
     const std::string tagBatch = "@rem #p";
 
     enum class JobMode

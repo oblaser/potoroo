@@ -47,7 +47,7 @@ Each line is interpreted as a job. Paths in the jobfile are relative to its cont
 | TAG | tag string in file |
 |:---|:---|
 | `cpp` | `//#p` |
-| `bash` | `#//p` |
+| `bash` | `##p` |
 | `batch` | `@rem #p` |
 | `custom:CTAG` | `CTAG` |
 
