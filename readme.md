@@ -2,6 +2,8 @@
 
 A preprocessor for scripts or any other text file.
 
+[VS Code integration](./vscode-integration.md)
+
 ## exapmles
 
 See [processor test potorooJobs](./test/system/processor/potorooJobs) and [processor test src](./test/system/processor)
