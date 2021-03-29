@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           02.03.2021
+\date           07.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -14,6 +14,7 @@
 
 #include "processor.h"
 #include "middleware/cliTextFormat.h"
+#include "middleware/util.h"
 
 namespace fs = std::filesystem;
 
@@ -627,7 +628,7 @@ Result potoroo::processJob(const Job& job) noexcept
     return r;
 }
 
-Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
+Result potoroo::processJobs(const std::vector<Job>& jobs, std::vector<bool>& success) noexcept
 {
 #if PRJ_DEBUG && 0
     cout << "===============\n" << "jobs:" << endl;
@@ -646,24 +647,32 @@ Result potoroo::processJobs(const std::vector<Job>& jobs) noexcept
     cout << "===============" << endl;
 #endif
 
-
 #if PRJ_DEBUG && 0
     printInfo("processor", "current dir: " + pathToStr(fs::current_path()) + "\n");
 #endif
 
+
     Result pr;
-    Result lastR;
+
+    if (jobs.size() != success.size())
+    {
+        printEWI("internal", "fatal! " + string(__FILENAME__) + ":" + to_string(__LINE__) + ": jobs.size() != success.size()", 0, 0, 0, 0);
+        ++pr.err;
+    }
 
     for (size_t i = 0; i < jobs.size(); ++i)
     {
         Job j = jobs[i];
 
-        if (lastR > 0) cout << "\n";
-
         cout << "process " << j << endl;
 
-        lastR = processJob(j);
-        pr += lastR;
+        Result r = processJob(j);
+        pr += r;
+
+        if (i < success.size())
+        {
+            success[i] = (r.err == 0);
+        }
     }
 
     return pr;

@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           03.03.2021
+\date           07.03.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include <cmath>
 
 #include "project.h"
 #include "application/arg.h"
@@ -78,17 +80,27 @@ namespace
 
     void printVersion()
     {
-        cout << "potoroo " << PRJ_VERSION ;
+        cout << "potoroo " << PRJ_VERSION;
 
 #if PRJ_VERSION_PRERELEASE
-        cout << " " << sgr(SGRFGC_BRIGHT_MAGENTA) << "pre-release" << sgr(SGR_RESET) << " built at " << __DATE__ << " " << __TIME__;
+        cout << " " << sgr(SGRFGC_BRIGHT_MAGENTA) << "pre-release" << sgr(SGR_RESET);
+
+#define VERSION_PRERELEASE_TYPE 0
+
+#if (VERSION_PRERELEASE_TYPE == 1)
+        cout << " built tag " << "TAG";
+#elif (VERSION_PRERELEASE_TYPE == 2)
+        cout << " built commit " << "COMMIT-HASH";
+#else
+        cout << " built at " << __DATE__ << " " << __TIME__;
+#endif
 #endif
 
 #if PRJ_DEBUG
-        cout << " " << sgr(SGRFGC_BRIGHT_RED) << " DEBUG" << sgr(SGR_RESET);
+        cout << "   " << sgr(SGRFGC_BRIGHT_RED) << "DEBUG" << sgr(SGR_RESET);
 #endif
 
-        cout << endl<< endl;
+        cout << endl << endl;
         cout << "project page: <https://github.com/oblaser/potoroo>" << endl;
         cout << endl;
         cout << "Copyright (c) 2021 Oliver Blaser." << endl;
@@ -96,20 +108,52 @@ namespace
         cout << "This is free software. There is NO WARRANTY." << endl;
     }
 
-    void printProcessorResult(const Result& pr)
+    void printProcessJobsResult(const Result& pr, const vector<Job>& jobs, const vector<bool>& success)
     {
-#if PRJ_DEBUG && 0
-        if (pr > 0)
-#else
-        if (pr > 6)
-#endif
-        {
-            cout << "\n   " << pr << endl;
+        size_t nJobs;
+        size_t nSucceeded = 0;
+        size_t nInvalid = 0;
 
-#ifndef PRJ_PLAT_WIN
-            cout << endl; // windows console ads an extra line automatically
-#endif
+        if (jobs.size() != success.size())
+        {
+            printEWI("internal", "fatal! " + string(__FILENAME__) + ":" + to_string(__LINE__) + ": jobs.size() != success.size()", 0, 0, 0, 0);
         }
+
+        vector<bool> succ(success);
+        while (succ.size() < jobs.size()) succ.push_back(false);
+
+        for (size_t i = 0; i < jobs.size(); ++i)
+        {
+            if (!jobs[i].isValid()) ++nInvalid;
+            if (succ[i]) ++nSucceeded;
+        }
+
+        nJobs = jobs.size() - nInvalid;
+
+
+
+        cout << "========";
+
+        cout << "  " << sgr(SGRFGC_BRIGHT_WHITE);
+        cout << nSucceeded << "/" << nJobs;
+        if (nInvalid) cout << "(" << jobs.size() << ")";
+        cout << sgr(SGR_RESET) << " succeeded";
+
+        cout << ", ";
+        if (pr.err) cout << sgr(SGRFGC_BRIGHT_RED);
+        cout << pr.err;
+        if (pr.err) cout << sgr(SGR_RESET);
+        cout << " error";
+        if (abs(pr.err) != 1) cout << "s";
+
+        cout << ", ";
+        if (pr.warn) cout << sgr(SGRFGC_BRIGHT_YELLOW);
+        cout << pr.warn;
+        if (pr.warn) cout << sgr(SGR_RESET);
+        cout << " warning";
+        if (abs(pr.warn) != 1) cout << "s";
+
+        cout << " ========" << endl;
     }
 }
 
@@ -180,9 +224,14 @@ int main(int argc, char** argv)
             if (cwdr.err == 0)
             {
                 if (pr.err > 0) cout << endl;
-                pr += processJobs(jobs);
+
+                vector<bool> success(jobs.size(), false);
+                pr += processJobs(jobs, success);
+
                 if (pr.err) result = rcNErrorBase + pr.err;
                 else result = rcOK;
+
+                printProcessJobsResult(pr, jobs, success);
             }
             else
             {
@@ -193,15 +242,17 @@ int main(int argc, char** argv)
         {
             result = rcJobFileErr;
         }
-
-        printProcessorResult(pr);
     }
     else if (apr == ArgProcResult::process)
     {
-        Result pr = processJob(Job::parseArgs(args));
-        printProcessorResult(pr);
+        Job job = Job::parseArgs(args);
+
+        Result pr = processJob(job);
+
         if (pr.err) result = rcNErrorBase + pr.err;
         else result = rcOK;
+
+        if ((pr.err != 0) || (pr.warn != 0)) cout << "\n   " << pr << "\n" << endl;
     }
     else if (apr == ArgProcResult::printHelp)
     {
