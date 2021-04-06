@@ -52,21 +52,37 @@ namespace
     {
         printEWI(file, text, line, col, 0, 1);
     }
+    void printError(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printError(file, text, procPos.ln, procPos.col);
+    }
 
     void printWarning(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
         printEWI(file, text, line, col, 1, 1);
+    }
+    void printWarning(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printWarning(file, text, procPos.ln, procPos.col);
     }
 
     void printInfo(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
         printEWI(file, text, line, col, 2, 1);
     }
+    void printInfo(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printInfo(file, text, procPos.ln, procPos.col);
+    }
 
 #if PRJ_DEBUG
     void printDbg(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
         printEWI(file, text, line, col, -1, 1);
+    }
+    void printDbg(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printDbg(file, text, procPos.ln, procPos.col);
     }
 #endif
 
