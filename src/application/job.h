@@ -37,7 +37,7 @@ namespace potoroo
     {
     public:
         Job();
-        Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError = false, JobMode mode = JobMode::proc);
+        Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError = false, JobMode mode = JobMode::proc, const std::string* wSup = nullptr);
 
         void setValidity(bool validity);
         void setErrorMsg(const std::string& msg);
@@ -47,6 +47,7 @@ namespace potoroo
         std::string getTag() const;
         JobMode getMode() const;
         bool warningAsError() const;
+        const std::vector<int>& getWSupList() const;
 
         void setInputFile(const std::string& inputFile);
         void setOutputFile(const std::string& outputFile);
@@ -54,6 +55,15 @@ namespace potoroo
         void setMode(const JobMode& m);
         void setWarningAsError(bool warningAsError = true);
         void clrWarningAsError();
+        void setWSupList(const int* list, size_t count);
+        void setWSupList(const std::vector<int>& list);
+        int setWSupList(const std::string& list);
+
+        void wSupListAdd(int wID);
+        void wSupListAddRange(const int* list, size_t count);
+        void wSupListAddRange(const std::vector<int>& list);
+        int wSupListAddRange(const std::string& list);
+        std::string wSupListToString() const;
 
         bool isValid() const;
         std::string getErrorMsg() const;
@@ -66,6 +76,7 @@ namespace potoroo
         std::string tag;
         JobMode mode;
         bool wError;
+        std::vector<int> wSupList;
 
         bool validity = false;
         std::string errorMsg;

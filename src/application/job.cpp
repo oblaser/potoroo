@@ -10,6 +10,8 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "job.h"
 #include "middleware/cliTextFormat.h"
@@ -267,9 +269,10 @@ namespace
 potoroo::Job::Job()
     : wError(false), validity(false), errorMsg("unset"), mode(JobMode::proc)
 {
+    setWSupList(nullptr, 0);
 }
 
-potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError, JobMode jobMode)
+potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError, JobMode jobMode, const std::string* wSup)
     : tag(tag), wError(warningAsError), validity(true), mode(jobMode)
 {
     try { inFile = fs::path(inputFile).lexically_normal().string(); }
@@ -280,6 +283,17 @@ potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, c
 
     errorMsg.clear();
     errorMsg.shrink_to_fit();
+
+    if (wSup)
+    {
+        if (setWSupList(*wSup))
+        {
+            setWSupList(nullptr, 0);
+            validity = false;
+            errorMsg = "invalid " + argStr_wSup + " LIST";
+        }
+    }
+    else setWSupList(nullptr, 0);
 }
 
 void potoroo::Job::setValidity(bool validity)
@@ -317,6 +331,11 @@ bool potoroo::Job::warningAsError() const
     return wError;
 }
 
+const std::vector<int>& potoroo::Job::getWSupList() const
+{
+    return wSupList;
+}
+
 void potoroo::Job::setInputFile(const std::string& inputFile)
 {
     inFile = inputFile;
@@ -345,6 +364,77 @@ void potoroo::Job::setWarningAsError(bool warningAsError)
 void potoroo::Job::clrWarningAsError()
 {
     setWarningAsError(false);
+}
+
+void potoroo::Job::setWSupList(const int* list, size_t count)
+{
+    std::vector<int> tmpList;
+
+    if (list)
+    {
+        for (size_t i = 0; i < count; ++i) tmpList.push_back(*(list + i));
+    }
+
+    setWSupList(tmpList);
+}
+
+void potoroo::Job::setWSupList(const std::vector<int>& list)
+{
+    wSupList.clear();
+    wSupListAddRange(list);
+}
+
+//! @return 0 on success, 1 on error
+int potoroo::Job::setWSupList(const std::string& list)
+{
+    wSupList.clear();
+    return wSupListAddRange(list);
+}
+
+void potoroo::Job::wSupListAdd(int wID)
+{
+    wSupList.push_back(wID);
+}
+
+void potoroo::Job::wSupListAddRange(const int* list, size_t count)
+{
+    std::vector<int> tmpList;
+
+    if (list)
+    {
+        for (size_t i = 0; i < count; ++i) tmpList.push_back(*(list + i));
+    }
+
+    wSupListAddRange(tmpList);
+}
+
+void potoroo::Job::wSupListAddRange(const std::vector<int>& list)
+{
+    wSupList.insert(wSupList.end(), list.begin(), list.end());
+}
+
+//! @return 0 on success, 1 on error
+int potoroo::Job::wSupListAddRange(const std::string& list)
+{
+    vector<int> tmpList;
+    int r = wSupStrListToVector(tmpList, list);
+
+    if (r == 0) wSupListAddRange(tmpList);
+
+    return r;
+}
+
+std::string potoroo::Job::wSupListToString() const
+{
+    string s = "";
+
+    for (size_t i = 0; i < wSupList.size(); ++i)
+    {
+        if (i > 0) s += ',';
+        s += to_string(wSupList[i]);
+    }
+
+    return s;
 }
 
 bool potoroo::Job::isValid() const
@@ -510,7 +600,11 @@ Job potoroo::Job::parseArgs(const ArgList& args)
         return j;
     }
 
-    try { return Job(inPath.string(), out, tag, args.contains(ArgType::wError), mode); }
+    string tmpWSupList = args.get(ArgType::wSup).getValue();
+    string* wSupList = nullptr;
+    if (args.get(ArgType::wSup).isValid()) wSupList = &tmpWSupList;
+
+    try { return Job(inPath.string(), out, tag, args.contains(ArgType::wError), mode, wSupList); }
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
 }

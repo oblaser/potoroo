@@ -175,10 +175,10 @@ int main(int argc, char** argv)
 #ifdef _DEBUG_ECLIPSE
     a.setValue("../../test/system/processor/potorooJobs");
 #else
-    a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
+    //a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
     //a.setValue("../../../test/system/lineEndings/potorooJobs");
-    a.setValue("../../../test/system/include/potorooJobs");
-    //a.setValue("../../../test/system/processor/potorooJobs");
+    //a.setValue("../../../test/system/include/potorooJobs");
+    a.setValue("../../../test/system/processor/potorooJobs");
 #endif
     args.add(a);
 #endif

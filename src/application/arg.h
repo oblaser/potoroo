@@ -44,6 +44,7 @@ namespace potoroo
         tag,
         forceJf,
         wError,
+        wSup,
         copy,
         copyow
     };
@@ -106,6 +107,8 @@ namespace potoroo
         static ArgList parse(int argc, const char* const* argv);
         static ArgList parse(const char* args);
     };
+
+    int wSupStrListToVector(std::vector<int>& list, const std::string& strList);
 
     ArgProcResult argProc(ArgList& args);
     ArgProcResult argProcJF(const ArgList& args, std::string& errMsg);

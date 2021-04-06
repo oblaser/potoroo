@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           05.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -102,6 +102,7 @@ potoroo::Arg::Arg(const std::string& arg)
     else if (arg == argStr_tag) type = ArgType::tag;
     else if (arg == argStr_forceJf) type = ArgType::forceJf;
     else if (arg == argStr_wError) type = ArgType::wError;
+    else if (arg == argStr_wSup) type = ArgType::wSup;
     else if (arg == argStr_copy) type = ArgType::copy;
     else if (arg == argStr_copyow) type = ArgType::copyow;
     else if ((arg == argStr_help) || (arg == argStr_help_alt)) type = ArgType::help;
@@ -164,6 +165,7 @@ std::string potoroo::Arg::dbgType() const
     else if (type == ArgType::tag) return "tag";
     else if (type == ArgType::forceJf) return argStr_forceJf;
     else if (type == ArgType::wError) return "wError";
+    else if (type == ArgType::wSup) return "wSup";
     else if (type == ArgType::help) return "help";
     else if (type == ArgType::version) return "version";
     else return "x";
@@ -239,7 +241,7 @@ std::string potoroo::ArgList::dbgDump() const
 {
     string s;
 
-    for (int i = 0; i < args.size(); ++i)
+    for (size_t i = 0; i < args.size(); ++i)
     {
         s += to_string(i) + "  ";
         s += args[i].dbgType();
@@ -367,6 +369,44 @@ ArgList potoroo::ArgList::parse(const char* args)
     return result;
 }
 
+
+
+int potoroo::wSupStrListToVector(std::vector<int>& list, const std::string& strList)
+{
+    const char* p = strList.c_str();
+    const char* const pMax = p + strList.length();
+
+    vector<string> tmpStrList;
+
+    while (p < pMax)
+    {
+        string tmpStr = "";
+        while ((p < pMax) && (*p != ','))
+        {
+            tmpStr += *p;
+            ++p;
+        }
+        ++p; // skip the comma
+        tmpStrList.push_back(tmpStr);
+    }
+
+    vector<int> tmpList;
+    int r = 0;
+
+    for (size_t i = 0; i < tmpStrList.size(); ++i)
+    {
+        try { tmpList.push_back(std::stoi(tmpStrList[i])); }
+        catch (...)
+        {
+            r = 1;
+            break;
+        }
+    }
+
+    if (r == 0) list = vector<int>(tmpList);
+
+    return r;
+}
 
 
 
