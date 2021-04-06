@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           02.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -65,7 +65,7 @@ enum class lineEnding
 
 
 
-Result changeWD(const std::string& jobfile);
+Result changeWD(const std::filesystem::path& newWD, std::string* exWhat = nullptr);
 
 void printEWI(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0, int ewi = 0x7FFFFFFF, int style = 0x7FFFFFFF);
 
@@ -73,5 +73,7 @@ lineEnding detectLineEnding(const std::filesystem::path& filepath);
 int convertLineEnding(const std::filesystem::path& inf, const std::filesystem::path& outf, lineEnding outfLineEnding);
 int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding);
 int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding, std::string& errMsg);
+
+void strReplaceAll(std::string& str, const std::string& from, const std::string& to);
 
 #endif // _UTIL_H_

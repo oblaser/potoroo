@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           02.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -10,6 +10,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <string>
 
 #include "cliTextFormat.h"
 
@@ -79,28 +80,33 @@ std::ostream& operator<<(std::ostream& os, const Result& v)
     return os;
 }
 
-
-
-//! @brief Change working dir to process jobfile
-//! @param jobfile String of the jobfile path
-//! @return 0 on success
-Result changeWD(const std::string& jobfile)
+//! @brief Change working dir
+//! @param newWD 
+//! @return 0 on success, 1 on error
+Result changeWD(const std::filesystem::path& newWD, std::string* exWhat)
 {
     int r = 1;
     const string procStr = "change working dir";
+    string errMsg;
 
     try
     {
-        fs::current_path(fs::path(jobfile).parent_path());
+        fs::current_path(newWD);
         r = 0;
     }
     catch (exception& ex)
     {
-        printEWI(procStr, ex.what(), 0, 0, 0, 0);
+        errMsg = ex.what();
     }
     catch (...)
     {
-        printEWI(procStr, "unknown", 0, 0, 0, 0);
+        errMsg = "unknown";
+    }
+
+    if (r != 0)
+    {
+        if (exWhat) *exWhat = std::string(errMsg);
+        else printEWI(procStr, errMsg, 0, 0, 0, 0);
     }
 
     return r;
@@ -409,4 +415,25 @@ int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding
     ofs.close();
 
     return result;
+}
+
+
+
+void strReplaceAll(std::string& str, const std::string& from, const std::string& to)
+{
+    size_t pos = 0;
+
+    if (from.empty()) return;
+
+    while (1)
+    {
+        pos = str.find(from, pos);
+
+        if (pos == std::string::npos) break;
+        else
+        {
+            str.replace(pos, from.length(), to);
+            pos += to.length();
+        }
+    }
 }

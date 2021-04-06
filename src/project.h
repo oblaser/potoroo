@@ -13,7 +13,7 @@
 
 namespace project
 {
-    const Version version(0, 1, 0);
+    const Version version(0, 2, 0);
 }
 
 

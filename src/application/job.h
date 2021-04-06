@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           04.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -47,6 +47,13 @@ namespace potoroo
         std::string getTag() const;
         JobMode getMode() const;
         bool warningAsError() const;
+
+        void setInputFile(const std::string& inputFile);
+        void setOutputFile(const std::string& outputFile);
+        void setTag(const std::string& t);
+        void setMode(const JobMode& m);
+        void setWarningAsError(bool warningAsError = true);
+        void clrWarningAsError();
 
         bool isValid() const;
         std::string getErrorMsg() const;

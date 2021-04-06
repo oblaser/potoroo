@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           07.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "processor.h"
@@ -28,6 +29,14 @@ namespace
     const string keyWord_rmEnd = "endrm";
     const string keyWord_rmn = "rmn";
     const string keyWord_ins = "ins";
+    const string keyWord_include = "include";
+
+    //const char incPathType_path_Char = '<';
+    //const char incPathType_path_CloseingChar = '>';
+    const char incPathType_rel_Char = '\"';
+    const char incPathType_rel_CloseingChar = '\"';
+    const char incPathType_dirty_Char = '\'';
+    const char incPathType_dirty_CloseingChar = '\'';
 
     enum class KeyWord
     {
@@ -36,7 +45,8 @@ namespace
         rmStart,
         rmEnd,
         rmn,
-        ins
+        ins,
+        include
     };
 
     struct ProcPos
@@ -48,25 +58,99 @@ namespace
         size_t col;
     };
 
+    class AbsPathStack
+    {
+    public:
+        AbsPathStack() { clear(); }
+        ~AbsPathStack() {}
+
+        void clear()
+        {
+            v.clear();
+        }
+
+        bool contains(const fs::path& path) const
+        {
+            error_code ec;
+
+            for (size_t i = 0; i < v.size(); ++i)
+            {
+                if (fs::equivalent(path, v[i], ec)) return true;
+            }
+
+            return false;
+        }
+
+        void pop()
+        {
+            v.pop_back();
+        }
+
+        void push(const fs::path& path)
+        {
+            v.push_back(fs::absolute(path));
+        }
+
+        size_t size() const
+        {
+            return v.size();
+        }
+
+        std::string toString() const
+        {
+            string s = "";
+
+            for (size_t i = 0; i < v.size(); ++i)
+            {
+                if (i > 0) s += '\n';
+                s += v[i].string();
+            }
+
+            return s;
+        }
+
+    private:
+        vector<fs::path> v;
+    };
+
+    AbsPathStack incPathStack;
+    AbsPathStack incPathHistory;
+
     void printError(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
         printEWI(file, text, line, col, 0, 1);
+    }
+    void printError(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printError(file, text, procPos.ln, procPos.col);
     }
 
     void printWarning(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
         printEWI(file, text, line, col, 1, 1);
     }
+    void printWarning(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printWarning(file, text, procPos.ln, procPos.col);
+    }
 
     void printInfo(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
         printEWI(file, text, line, col, 2, 1);
+    }
+    void printInfo(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printInfo(file, text, procPos.ln, procPos.col);
     }
 
 #if PRJ_DEBUG
     void printDbg(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
         printEWI(file, text, line, col, -1, 1);
+    }
+    void printDbg(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printDbg(file, text, procPos.ln, procPos.col);
     }
 #endif
 
@@ -102,11 +186,136 @@ namespace
         if (kwStr.compare(keyWord_rmEnd) == 0) kw = KeyWord::rmEnd;
         if (kwStr.compare(keyWord_rmn) == 0)  kw = KeyWord::rmn;
         if (kwStr.compare(keyWord_ins) == 0) kw = KeyWord::ins;
+        if (kwStr.compare(keyWord_include) == 0) kw = KeyWord::include;
         //if (kwStr.compare(keyWord_) == 0) kw = KeyWord::;
 
         return kw;
     }
 
+    Result rmOut(const fs::path& outf, const string& ewiFile, bool dir) noexcept
+    {
+        Result r;
+
+        const string rmFileErrorMsg = "invalid/temporary output file not deleted";
+
+        try { fs::remove(outf); }
+        catch (fs::filesystem_error& ex)
+        {
+            ++r.warn;
+            printWarning(ewiFile, rmFileErrorMsg + ": " + ex.what());
+        }
+        catch (exception& ex)
+        {
+            ++r.warn;
+            printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.what());
+        }
+        catch (...)
+        {
+            ++r.warn;
+            printWarning(ewiFile, rmFileErrorMsg);
+        }
+
+        if (dir)
+        {
+            const string rmDirErrorMsg = "temporary output directory not deleted";
+
+            try { fs::remove(outf.parent_path()); }
+            catch (fs::filesystem_error& ex)
+            {
+                ++r.warn;
+                printWarning(ewiFile, rmDirErrorMsg + ": " + ex.what());
+            }
+            catch (exception& ex)
+            {
+                ++r.warn;
+                printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.what());
+            }
+            catch (...)
+            {
+                ++r.warn;
+                printWarning(ewiFile, rmDirErrorMsg);
+            }
+        }
+
+        return r;
+    }
+
+    char getCloseingIncPathChar(char openingChar)
+    {
+        //if (openingChar == incPathType_path_Char) return incPathType_path_CloseingChar;       // future use
+        if (openingChar == incPathType_rel_Char) return incPathType_rel_CloseingChar;
+        if (openingChar == incPathType_dirty_Char) return incPathType_dirty_CloseingChar;
+
+        return 0;
+    }
+
+    Result includeDirty(ofstream& outFileStream, const fs::path& incFile, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
+    {
+        Result r;
+
+        ofstream& ofs = outFileStream;
+        ifstream ifs;
+
+        ifs.open(incFile, ios::in | ios::binary);
+
+        char c = static_cast<char>(ifs.get());
+
+        if (!ifs.good())
+        {
+            ++r.warn;
+            printWarning(ewiFile, "empty include file", pPos.ln, pathCol);
+        }
+
+        while (ifs.good())
+        {
+            ofs.put(c);
+            c = static_cast<char>(ifs.get());
+        }
+
+        return r;
+    }
+
+    Result includeRel(ofstream& outFileStream, const fs::path& incFile, const fs::path& outf, const Job& job, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
+    {
+        Result r;
+
+        ofstream& ofs = outFileStream;
+
+        fs::path incOutf = outf.parent_path() / processorTmpDirIncOut / incFile.filename();
+        Job tmpJob = job;
+        tmpJob.setInputFile(incFile.string());
+        tmpJob.setOutputFile(incOutf.string());
+
+        const fs::path currentWD = fs::current_path();
+        string cwdExWhat;
+        Result cwdr = changeWD(incFile.parent_path(), &cwdExWhat);
+
+        if (cwdr > 0)
+        {
+            ++r.err;
+            printError(ewiFile, "could not change working dir to process included file: " + cwdExWhat);
+        }
+        else
+        {
+            Result recoursiveResult = processJob(tmpJob);
+            r += recoursiveResult;
+
+            cwdr = changeWD(currentWD, &cwdExWhat);
+            if (cwdr > 0)
+            {
+                ++r.err;
+                printError(ewiFile, "could not change back to working dir after processing included file: " + cwdExWhat);
+            }
+
+            if ((recoursiveResult.err == 0) && (cwdr == 0))
+            {
+                r += includeDirty(ofs, incOutf, ewiFile, pPos, pathCol);
+                r += rmOut(incOutf, ewiFile, true);
+            }
+        }
+
+        return r;
+    }
 
 
 
@@ -360,6 +569,116 @@ namespace
                                     ++pPos.col;
                                 }
                             }
+                            else if (kw == KeyWord::include)
+                            {
+                                skipThisLine = true;
+
+                                // skip space
+                                while ((p < pMax) && isSpace(p))
+                                {
+                                    ++p;
+                                    ++pPos.col;
+                                }
+
+                                const size_t pathCol = pPos.col;
+
+                                if (p >= pMax)
+                                {
+                                    ++r.err;
+                                    printError(ewiFile, "###missing argument of @include@", pPos.ln, pPos.col);
+                                }
+                                else
+                                {
+                                    // get path type
+                                    char pathTypeChar = *p;
+                                    char pathTypeCloseingChar = getCloseingIncPathChar(pathTypeChar);
+                                    ++p;
+                                    ++pPos.col;
+
+                                    if (pathTypeCloseingChar == 0)
+                                    {
+                                        ++r.err;
+                                        printError(ewiFile, "invalid path type", pPos.ln, pathCol);
+                                    }
+                                    else
+                                    {
+                                        // get path
+                                        string pathStr = "";
+                                        while ((p < pMax) && ((*p != pathTypeCloseingChar) || (*(p - 1) == '\\')) && !isNewLine(p)) // p-1 is a valid pointer at this position, because there is allway a tag before p.
+                                        {
+                                            pathStr += *p;
+                                            ++p;
+                                            ++pPos.col;
+                                        }
+                                        char replace[] = { '\\', pathTypeChar, 0 };
+                                        char replaceWith[] = { pathTypeChar, 0 };
+                                        strReplaceAll(pathStr, replace, replaceWith);
+                                        replace[1] = pathTypeCloseingChar;
+                                        replaceWith[0] = pathTypeCloseingChar;
+                                        strReplaceAll(pathStr, replace, replaceWith);
+
+                                        if ((*p == pathTypeCloseingChar) && (pathStr.length() > 0))
+                                        {
+                                            ++p;
+                                            ++pPos.col;
+
+                                            fs::path incPath(pathStr);
+
+                                            if (incPath.is_relative())
+                                            {
+                                                incPath = inf.parent_path() / pathStr;
+                                            }
+#if PRJ_DEBUG && 0
+                                            string incTypeDispStr = "?";
+                                            if (pathTypeChar == incPathType_rel_Char) incTypeDispStr = "relative to file";
+                                            else if (pathTypeChar == incPathType_path_Char) incTypeDispStr = "relative to path in potoroo config";
+                                            else if (pathTypeChar == incPathType_dirty_Char) incTypeDispStr = "relative to file (no preProc, dirty include)";
+                                            printDbg(ewiFile, "###include path: \"" + pathStr + "\" => \"" + incPath.string() + "\" - " + incTypeDispStr, pPos);
+#endif
+                                            if (fs::exists(incPath))
+                                            {
+                                                if (!incPathStack.contains(incPath))
+                                                {
+                                                    incPathStack.push(incPath);
+
+                                                    if (incPathHistory.contains(incPath))
+                                                    {
+                                                        ++r.warn;
+                                                        printWarning(ewiFile, "included same file multiple times", pPos.ln, pathCol);
+                                                    }
+
+                                                    incPathHistory.push(incPath);
+
+                                                    if (pathTypeChar == incPathType_rel_Char) r += includeRel(ofs, incPath, outf, job, ewiFile, pPos, pathCol);
+                                                    else if (pathTypeChar == incPathType_dirty_Char) r += includeDirty(ofs, incPath, ewiFile, pPos, pathCol);
+                                                    else
+                                                    {
+                                                        ++r.err;
+                                                        printError(ewiFile, "ERROR - unimplemented include path type - " + string(__FILENAME__) + ":" + to_string(__LINE__), pPos);
+                                                    }
+
+                                                    incPathStack.pop();
+                                                }
+                                                else
+                                                {
+                                                    ++r.err;
+                                                    printError(ewiFile, "include loop detected - include stack:\n" + incPathStack.toString(), pPos.ln, pathCol);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                ++r.err;
+                                                printError(ewiFile, "include file does not exist", pPos.ln, pathCol);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            ++r.err;
+                                            printError(ewiFile, "invalid include path", pPos.ln, pathCol);
+                                        }
+                                    }
+                                }
+                            }
                             else
                             {
                                 ++r.err;
@@ -438,54 +757,6 @@ namespace
 
         return r;
     }
-
-    Result rmOut(const fs::path& outf, const string& ewiFile, bool dir) noexcept
-    {
-        Result r;
-
-        const string rmFileErrorMsg = "invalid output file not deleted";
-
-        try { fs::remove(outf); }
-        catch (fs::filesystem_error& ex)
-        {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg + ": " + ex.what());
-        }
-        catch (exception& ex)
-        {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.what());
-        }
-        catch (...)
-        {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg);
-        }
-
-        if (dir)
-        {
-            const string rmDirErrorMsg = "output directory not deleted";
-
-            try { fs::remove(outf.parent_path()); }
-            catch (fs::filesystem_error& ex)
-            {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg + ": " + ex.what());
-            }
-            catch (exception& ex)
-            {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.what());
-            }
-            catch (...)
-            {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg);
-            }
-        }
-
-        return r;
-    }
 }
 
 Result potoroo::processJob(const Job& job) noexcept
@@ -544,7 +815,7 @@ Result potoroo::processJob(const Job& job) noexcept
                 if (ile == lineEnding::LF) r += caterpillarProc(inf, outf, job, ewiFile);
                 else
                 {
-                    fs::path tmpProcDir(outf.parent_path() / ".potorooTemp");
+                    fs::path tmpProcDir(outf.parent_path() / processorTmpDirLineEnding);
                     fs::path infLF(tmpProcDir / (inf.filename().string() + ".infLF"));
                     fs::path outfLF(tmpProcDir / (outf.filename().string() + ".outfLF"));
 
@@ -665,6 +936,9 @@ Result potoroo::processJobs(const std::vector<Job>& jobs, std::vector<bool>& suc
         Job j = jobs[i];
 
         cout << "process " << j << endl;
+
+        incPathStack.clear();
+        incPathHistory.clear();
 
         Result r = processJob(j);
         pr += r;
