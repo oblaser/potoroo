@@ -1,0 +1,4 @@
+function funcInSpecialFile()
+{
+    return 'funcInSpecialFile';
+}
