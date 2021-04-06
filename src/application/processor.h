@@ -17,8 +17,8 @@
 
 namespace potoroo
 {
-    const std::string processorDirIncOut = "potorooIncOut";
-    const std::string processorTmpDirLineEnding = ".potorooTempLF";
+    const std::string processorTmpDirIncOut = "potorooTempIncProcOut";
+    const std::string processorTmpDirLineEnding = "potorooTempLineEnding";
 
     Result processJob(const Job& job) noexcept;
     Result processJobs(const std::vector<Job>& jobs, std::vector<bool>& success) noexcept;

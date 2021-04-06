@@ -65,7 +65,7 @@ enum class lineEnding
 
 
 
-Result changeWD(const std::string& jobfile);
+Result changeWD(const std::filesystem::path& newWD, std::string* exWhat = nullptr);
 
 void printEWI(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0, int ewi = 0x7FFFFFFF, int style = 0x7FFFFFFF);
 

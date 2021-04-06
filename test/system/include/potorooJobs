@@ -5,4 +5,4 @@
 #
 
 -if index.html          -od 000_deploy      --copy
--if index.js            -od 000_deploy
+-if js/index.js         -od 000_deploy

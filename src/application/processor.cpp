@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "processor.h"
@@ -30,6 +31,13 @@ namespace
     const string keyWord_ins = "ins";
     const string keyWord_include = "include";
 
+    //const char incPathType_path_Char = '<';
+    //const char incPathType_path_CloseingChar = '>';
+    const char incPathType_rel_Char = '\"';
+    const char incPathType_rel_CloseingChar = '\"';
+    const char incPathType_dirty_Char = '\'';
+    const char incPathType_dirty_CloseingChar = '\'';
+
     enum class KeyWord
     {
         unknown,
@@ -49,6 +57,37 @@ namespace
         size_t ln;
         size_t col;
     };
+
+
+
+    vector<fs::path> incPathStack;
+
+    bool incPathStackContains(const fs::path& path)
+    {
+        error_code ec;
+
+        for (size_t i = 0; i < incPathStack.size(); ++i)
+        {
+            if (fs::equivalent(path, incPathStack[i], ec)) return true;
+        }
+
+        return false;
+    }
+
+    std::string incPathStackToString()
+    {
+        string s = "";
+
+        for (size_t i = 0; i < incPathStack.size(); ++i)
+        {
+            if (i > 0) s += '\n';
+            s += incPathStack[i].string();
+        }
+
+        return s;
+    }
+
+
 
     void printError(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
@@ -126,16 +165,64 @@ namespace
         return kw;
     }
 
+    Result rmOut(const fs::path& outf, const string& ewiFile, bool dir) noexcept
+    {
+        Result r;
+
+        const string rmFileErrorMsg = "invalid/temporary output file not deleted";
+
+        try { fs::remove(outf); }
+        catch (fs::filesystem_error& ex)
+        {
+            ++r.warn;
+            printWarning(ewiFile, rmFileErrorMsg + ": " + ex.what());
+        }
+        catch (exception& ex)
+        {
+            ++r.warn;
+            printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.what());
+        }
+        catch (...)
+        {
+            ++r.warn;
+            printWarning(ewiFile, rmFileErrorMsg);
+        }
+
+        if (dir)
+        {
+            const string rmDirErrorMsg = "temporary output directory not deleted";
+
+            try { fs::remove(outf.parent_path()); }
+            catch (fs::filesystem_error& ex)
+            {
+                ++r.warn;
+                printWarning(ewiFile, rmDirErrorMsg + ": " + ex.what());
+            }
+            catch (exception& ex)
+            {
+                ++r.warn;
+                printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.what());
+            }
+            catch (...)
+            {
+                ++r.warn;
+                printWarning(ewiFile, rmDirErrorMsg);
+            }
+        }
+
+        return r;
+    }
+
     char getCloseingIncPathChar(char openingChar)
     {
-        //if (openingChar == '\"') return '\"';     future use
-        //if (openingChar == '<') return '>';       future use
-        if (openingChar == '[') return ']';
+        //if (openingChar == incPathType_path_Char) return incPathType_path_CloseingChar;       // future use
+        if (openingChar == incPathType_rel_Char) return incPathType_rel_CloseingChar;
+        if (openingChar == incPathType_dirty_Char) return incPathType_dirty_CloseingChar;
 
         return 0;
     }
 
-    Result includeDirty(ofstream& outFileStream, fs::path incFile, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
+    Result includeDirty(ofstream& outFileStream, const fs::path& incFile, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
     {
         Result r;
 
@@ -156,6 +243,48 @@ namespace
         {
             ofs.put(c);
             c = static_cast<char>(ifs.get());
+        }
+
+        return r;
+    }
+
+    Result includeRel(ofstream& outFileStream, const fs::path& incFile, const fs::path& outf, const Job& job, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
+    {
+        Result r;
+
+        ofstream& ofs = outFileStream;
+
+        fs::path incOutf = outf.parent_path() / processorTmpDirIncOut / incFile.filename();
+        Job tmpJob = job;
+        tmpJob.setInputFile(incFile.string());
+        tmpJob.setOutputFile(incOutf.string());
+
+        const fs::path currentWD = fs::current_path();
+        string cwdExWhat;
+        Result cwdr = changeWD(incFile.parent_path(), &cwdExWhat);
+
+        if (cwdr > 0)
+        {
+            ++r.err;
+            printError(ewiFile, "could not change working dir to process included file: " + cwdExWhat);
+        }
+        else
+        {
+            Result recoursiveResult = processJob(tmpJob);
+            r += recoursiveResult;
+
+            cwdr = changeWD(currentWD, &cwdExWhat);
+            if (cwdr > 0)
+            {
+                ++r.err;
+                printError(ewiFile, "could not change back to working dir after processing included file: " + cwdExWhat);
+            }
+
+            if ((recoursiveResult.err == 0) && (cwdr == 0))
+            {
+                r += includeDirty(ofs, incOutf, ewiFile, pPos, pathCol);
+                r += rmOut(incOutf, ewiFile, true);
+            }
         }
 
         return r;
@@ -474,24 +603,37 @@ namespace
                                             }
 #if PRJ_DEBUG && 0
                                             string incTypeDispStr = "?";
-                                            if (pathTypeChar == '\"') incTypeDispStr = "relative to file";
-                                            else if (pathTypeChar == '<') incTypeDispStr = "relative to path in potoroo config";
-                                            else if (pathTypeChar == '[') incTypeDispStr = "relative to file (no preProc, dirty include)";
+                                            if (pathTypeChar == incPathType_rel_Char) incTypeDispStr = "relative to file";
+                                            else if (pathTypeChar == incPathType_path_Char) incTypeDispStr = "relative to path in potoroo config";
+                                            else if (pathTypeChar == incPathType_dirty_Char) incTypeDispStr = "relative to file (no preProc, dirty include)";
                                             printDbg(ewiFile, "###include path: \"" + pathStr + "\" => \"" + incPath.string() + "\" - " + incTypeDispStr, pPos);
 #endif
-                                            if (pathTypeChar == '[')
+                                            if (fs::exists(incPath))
                                             {
-                                                if (fs::exists(incPath)) r += includeDirty(ofs, incPath, ewiFile, pPos, pathCol);
+                                                if (!incPathStackContains(fs::absolute(incPath)))
+                                                {
+                                                    incPathStack.push_back(fs::absolute(incPath));
+
+                                                    if (pathTypeChar == incPathType_rel_Char) r += includeRel(ofs, incPath, outf, job, ewiFile, pPos, pathCol);
+                                                    else if (pathTypeChar == incPathType_dirty_Char) r += includeDirty(ofs, incPath, ewiFile, pPos, pathCol);
+                                                    else
+                                                    {
+                                                        ++r.err;
+                                                        printError(ewiFile, "ERROR " + string(__FILENAME__) + ":" + to_string(__LINE__), pPos);
+                                                    }
+
+                                                    incPathStack.pop_back();
+                                                }
                                                 else
                                                 {
                                                     ++r.err;
-                                                    printError(ewiFile, "include file does not exist", pPos.ln, pathCol);
+                                                    printError(ewiFile, "include loop detected - include stack:\n" + incPathStackToString(), pPos.ln, pathCol);
                                                 }
                                             }
                                             else
                                             {
                                                 ++r.err;
-                                                printError(ewiFile, "ERROR " + string(__FILENAME__) + ":" + to_string(__LINE__), pPos);
+                                                printError(ewiFile, "include file does not exist", pPos.ln, pathCol);
                                             }
                                         }
                                         else
@@ -577,54 +719,6 @@ namespace
 
         ifs.close();
         ofs.close();
-
-        return r;
-    }
-
-    Result rmOut(const fs::path& outf, const string& ewiFile, bool dir) noexcept
-    {
-        Result r;
-
-        const string rmFileErrorMsg = "invalid output file not deleted";
-
-        try { fs::remove(outf); }
-        catch (fs::filesystem_error& ex)
-        {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg + ": " + ex.what());
-        }
-        catch (exception& ex)
-        {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.what());
-        }
-        catch (...)
-        {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg);
-        }
-
-        if (dir)
-        {
-            const string rmDirErrorMsg = "output directory not deleted";
-
-            try { fs::remove(outf.parent_path()); }
-            catch (fs::filesystem_error& ex)
-            {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg + ": " + ex.what());
-            }
-            catch (exception& ex)
-            {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.what());
-            }
-            catch (...)
-            {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg);
-            }
-        }
 
         return r;
     }
@@ -736,13 +830,13 @@ Result potoroo::processJob(const Job& job) noexcept
                     ++r.err;
                     printError(ewiFile, "file not copied");
                 }
-        }
+            }
             else
             {
                 ++r.err;
                 printError("processor", "invalid job mode");
             }
-    }
+        }
         catch (exception& ex)
         {
             ++r.err;
@@ -757,7 +851,7 @@ Result potoroo::processJob(const Job& job) noexcept
             ++r.err;
             printError(ewiFile, "unknown");
         }
-}
+    }
 
     if (job.warningAsError() && (r.warn > 0))
     {
@@ -818,4 +912,4 @@ Result potoroo::processJobs(const std::vector<Job>& jobs, std::vector<bool>& suc
     }
 
     return pr;
-    }
+}

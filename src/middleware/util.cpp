@@ -80,28 +80,33 @@ std::ostream& operator<<(std::ostream& os, const Result& v)
     return os;
 }
 
-
-
-//! @brief Change working dir to process jobfile
-//! @param jobfile String of the jobfile path
-//! @return 0 on success
-Result changeWD(const std::string& jobfile)
+//! @brief Change working dir
+//! @param newWD 
+//! @return 0 on success, 1 on error
+Result changeWD(const std::filesystem::path& newWD, std::string* exWhat)
 {
     int r = 1;
     const string procStr = "change working dir";
+    string errMsg;
 
     try
     {
-        fs::current_path(fs::path(jobfile).parent_path());
+        fs::current_path(newWD);
         r = 0;
     }
     catch (exception& ex)
     {
-        printEWI(procStr, ex.what(), 0, 0, 0, 0);
+        errMsg = ex.what();
     }
     catch (...)
     {
-        printEWI(procStr, "unknown", 0, 0, 0, 0);
+        errMsg = "unknown";
+    }
+
+    if (r != 0)
+    {
+        if (exWhat) *exWhat = std::string(errMsg);
+        else printEWI(procStr, errMsg, 0, 0, 0, 0);
     }
 
     return r;

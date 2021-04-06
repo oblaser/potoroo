@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           05.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -315,6 +315,36 @@ JobMode potoroo::Job::getMode() const
 bool potoroo::Job::warningAsError() const
 {
     return wError;
+}
+
+void potoroo::Job::setInputFile(const std::string& inputFile)
+{
+    inFile = inputFile;
+}
+
+void potoroo::Job::setOutputFile(const std::string& outputFile)
+{
+    outFile = outputFile;
+}
+
+void potoroo::Job::setTag(const std::string& t)
+{
+    tag = t;
+}
+
+void potoroo::Job::setMode(const JobMode& m)
+{
+    mode = m;
+}
+
+void potoroo::Job::setWarningAsError(bool warningAsError)
+{
+    wError = warningAsError;
+}
+
+void potoroo::Job::clrWarningAsError()
+{
+    setWarningAsError(false);
 }
 
 bool potoroo::Job::isValid() const

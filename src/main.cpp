@@ -1,17 +1,17 @@
 /*!
 
 \author         Oliver Blaser
-\date           07.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
 
+#include <cmath>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include <cmath>
 
 #include "project.h"
 #include "application/arg.h"
@@ -22,6 +22,8 @@
 using namespace std;
 using namespace cli;
 using namespace potoroo;
+
+namespace fs = std::filesystem;
 
 namespace
 {
@@ -219,7 +221,7 @@ int main(int argc, char** argv)
             (args.contains(ArgType::forceJf) && (pr.err > 0)) // only force if no file IO error
             )
         {
-            Result cwdr = changeWD(jobfile);
+            Result cwdr = changeWD(fs::path(jobfile).parent_path());
             pr += cwdr;
 
             if (cwdr.err == 0)

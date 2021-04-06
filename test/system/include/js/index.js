@@ -6,10 +6,11 @@ copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
 
-//#p include [../processor/js/jQuery.js]
-//#p include [./js/someFunctions.js]
-//#p include [js/abc_\[def\].js]
-//#p include [js/empty.js]
+//#p include '../../processor/js/jQuery.js'
+//#p include "innerJS/someFunctions.js"
+//#p include './innerJS/abc_\'def\'.js'
+// //#p include 'innerJS/empty.js'
+//#p include "innerJS/empty.js"
 
 $(function()
 {
