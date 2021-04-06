@@ -54,6 +54,10 @@ namespace
     {
         printEWI(file, text, line, col, 0, 1);
     }
+    void printError(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printError(file, text, procPos.ln, procPos.col);
+    }
 
     void printWarning(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
@@ -121,6 +125,32 @@ namespace
         if (openingChar == '[') return ']';
 
         return 0;
+    }
+
+    Result includeDirty(ofstream& outFileStream, fs::path incFile, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
+    {
+        Result r;
+
+        ofstream& ofs = outFileStream;
+        ifstream ifs;
+
+        ifs.open(incFile, ios::in | ios::binary);
+
+        char c = static_cast<char>(ifs.get());
+
+        if (!ifs.good())
+        {
+            ++r.warn;
+            printWarning(ewiFile, "empty include file", pPos.ln, pathCol);
+        }
+
+        while (ifs.good())
+        {
+            ofs.put(c);
+            c = static_cast<char>(ifs.get());
+        }
+
+        return r;
     }
 
 
@@ -396,36 +426,71 @@ namespace
                                 else
                                 {
                                     // get path type
-                                    char pathType = *p;
-                                    char pathTypeCloseing = getCloseingIncPathChar(pathType);
+                                    char pathTypeChar = *p;
+                                    char pathTypeCloseingChar = getCloseingIncPathChar(pathTypeChar);
                                     ++p;
                                     ++pPos.col;
 
-                                    if (pathTypeCloseing == 0)
+                                    if (pathTypeCloseingChar == 0)
                                     {
                                         ++r.err;
-                                        printError(ewiFile, "invalid path type", pPos.ln, pPos.col);
+                                        printError(ewiFile, "invalid path type", pPos.ln, pathCol);
                                     }
                                     else
                                     {
                                         // get path
                                         string pathStr = "";
-                                        while ((p < pMax) && ((*p != pathTypeCloseing) || (*(p - 1) == '\\'))) // p-1 is a valid pointer at this position, because there is allway a tag before p.
+                                        while ((p < pMax) && ((*p != pathTypeCloseingChar) || (*(p - 1) == '\\')) && !isNewLine(p)) // p-1 is a valid pointer at this position, because there is allway a tag before p.
                                         {
                                             pathStr += *p;
                                             ++p;
                                             ++pPos.col;
                                         }
-                                        char replace[] = { '\\', pathTypeCloseing ,0 };
-                                        char replaceWith[] = { pathTypeCloseing ,0 };
+                                        char replace[] = { '\\', pathTypeChar, 0 };
+                                        char replaceWith[] = { pathTypeChar, 0 };
+                                        strReplaceAll(pathStr, replace, replaceWith);
+                                        replace[1] = pathTypeCloseingChar;
+                                        replaceWith[0] = pathTypeCloseingChar;
                                         strReplaceAll(pathStr, replace, replaceWith);
 
+                                        if ((*p == pathTypeCloseingChar) && (pathStr.length() > 0))
+                                        {
+                                            ++p;
+                                            ++pPos.col;
 
-                                        string incTypeDispStr = "?";
-                                        if (pathType == '\"') incTypeDispStr = "relative to file";
-                                        else if (pathType == '<') incTypeDispStr = "relative to path in potoroo config";
-                                        else if (pathType == '[') incTypeDispStr = "relative to file (no preProc, dirty include)";
-                                        printDbg(ewiFile, "###include path: \"" + pathStr + "\" => \"" + fs::path(pathStr).relative_path().string() + "\" - " + incTypeDispStr, pPos);
+                                            fs::path incPath(pathStr);
+
+                                            if (incPath.is_relative())
+                                            {
+                                                incPath = inf.parent_path() / pathStr;
+                                            }
+#if PRJ_DEBUG && 0
+                                            string incTypeDispStr = "?";
+                                            if (pathTypeChar == '\"') incTypeDispStr = "relative to file";
+                                            else if (pathTypeChar == '<') incTypeDispStr = "relative to path in potoroo config";
+                                            else if (pathTypeChar == '[') incTypeDispStr = "relative to file (no preProc, dirty include)";
+                                            printDbg(ewiFile, "###include path: \"" + pathStr + "\" => \"" + incPath.string() + "\" - " + incTypeDispStr, pPos);
+#endif
+                                            if (pathTypeChar == '[')
+                                            {
+                                                if (fs::exists(incPath)) r += includeDirty(ofs, incPath, ewiFile, pPos, pathCol);
+                                                else
+                                                {
+                                                    ++r.err;
+                                                    printError(ewiFile, "include file does not exist", pPos.ln, pathCol);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                ++r.err;
+                                                printError(ewiFile, "ERROR " + string(__FILENAME__) + ":" + to_string(__LINE__), pPos);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            ++r.err;
+                                            printError(ewiFile, "invalid include path", pPos.ln, pathCol);
+                                        }
                                     }
                                 }
                             }
@@ -613,7 +678,7 @@ Result potoroo::processJob(const Job& job) noexcept
                 if (ile == lineEnding::LF) r += caterpillarProc(inf, outf, job, ewiFile);
                 else
                 {
-                    fs::path tmpProcDir(outf.parent_path() / ".potorooTemp");
+                    fs::path tmpProcDir(outf.parent_path() / processorTmpDirLineEnding);
                     fs::path infLF(tmpProcDir / (inf.filename().string() + ".infLF"));
                     fs::path outfLF(tmpProcDir / (outf.filename().string() + ".outfLF"));
 
@@ -663,13 +728,13 @@ Result potoroo::processJob(const Job& job) noexcept
                     ++r.err;
                     printError(ewiFile, "file not copied");
                 }
-            }
+        }
             else
             {
                 ++r.err;
                 printError("processor", "invalid job mode");
             }
-        }
+    }
         catch (exception& ex)
         {
             ++r.err;
@@ -684,7 +749,7 @@ Result potoroo::processJob(const Job& job) noexcept
             ++r.err;
             printError(ewiFile, "unknown");
         }
-    }
+}
 
     if (job.warningAsError() && (r.warn > 0))
     {
@@ -745,4 +810,4 @@ Result potoroo::processJobs(const std::vector<Job>& jobs, std::vector<bool>& suc
     }
 
     return pr;
-}
+    }
