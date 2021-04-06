@@ -12,6 +12,8 @@ copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 // //#p include 'innerJS/empty.js'
 //#p include "innerJS/empty.js"
 
+// //#p include 'innerJS/a.js'
+
 $(function()
 {
     $('#jsc').html('<div>index.js</div>');

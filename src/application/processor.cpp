@@ -58,36 +58,63 @@ namespace
         size_t col;
     };
 
-
-
-    vector<fs::path> incPathStack;
-
-    bool incPathStackContains(const fs::path& path)
+    class AbsPathStack
     {
-        error_code ec;
+    public:
+        AbsPathStack() { clear(); }
+        ~AbsPathStack() {}
 
-        for (size_t i = 0; i < incPathStack.size(); ++i)
+        void clear()
         {
-            if (fs::equivalent(path, incPathStack[i], ec)) return true;
+            v.clear();
         }
 
-        return false;
-    }
-
-    std::string incPathStackToString()
-    {
-        string s = "";
-
-        for (size_t i = 0; i < incPathStack.size(); ++i)
+        bool contains(const fs::path& path) const
         {
-            if (i > 0) s += '\n';
-            s += incPathStack[i].string();
+            error_code ec;
+
+            for (size_t i = 0; i < v.size(); ++i)
+            {
+                if (fs::equivalent(path, v[i], ec)) return true;
+            }
+
+            return false;
         }
 
-        return s;
-    }
+        void pop()
+        {
+            v.pop_back();
+        }
 
+        void push(const fs::path& path)
+        {
+            v.push_back(fs::absolute(path));
+        }
 
+        size_t size() const
+        {
+            return v.size();
+        }
+
+        std::string toString() const
+        {
+            string s = "";
+
+            for (size_t i = 0; i < v.size(); ++i)
+            {
+                if (i > 0) s += '\n';
+                s += v[i].string();
+            }
+
+            return s;
+        }
+
+    private:
+        vector<fs::path> v;
+    };
+
+    AbsPathStack incPathStack;
+    AbsPathStack incPathHistory;
 
     void printError(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
@@ -610,24 +637,32 @@ namespace
 #endif
                                             if (fs::exists(incPath))
                                             {
-                                                if (!incPathStackContains(fs::absolute(incPath)))
+                                                if (!incPathStack.contains(incPath))
                                                 {
-                                                    incPathStack.push_back(fs::absolute(incPath));
+                                                    incPathStack.push(incPath);
+
+                                                    if (incPathHistory.contains(incPath))
+                                                    {
+                                                        ++r.warn;
+                                                        printWarning(ewiFile, "included same file multiple times", pPos.ln, pathCol);
+                                                    }
+
+                                                    incPathHistory.push(incPath);
 
                                                     if (pathTypeChar == incPathType_rel_Char) r += includeRel(ofs, incPath, outf, job, ewiFile, pPos, pathCol);
                                                     else if (pathTypeChar == incPathType_dirty_Char) r += includeDirty(ofs, incPath, ewiFile, pPos, pathCol);
                                                     else
                                                     {
                                                         ++r.err;
-                                                        printError(ewiFile, "ERROR " + string(__FILENAME__) + ":" + to_string(__LINE__), pPos);
+                                                        printError(ewiFile, "ERROR - unimplemented include path type - " + string(__FILENAME__) + ":" + to_string(__LINE__), pPos);
                                                     }
 
-                                                    incPathStack.pop_back();
+                                                    incPathStack.pop();
                                                 }
                                                 else
                                                 {
                                                     ++r.err;
-                                                    printError(ewiFile, "include loop detected - include stack:\n" + incPathStackToString(), pPos.ln, pathCol);
+                                                    printError(ewiFile, "include loop detected - include stack:\n" + incPathStack.toString(), pPos.ln, pathCol);
                                                 }
                                             }
                                             else
@@ -901,6 +936,9 @@ Result potoroo::processJobs(const std::vector<Job>& jobs, std::vector<bool>& suc
         Job j = jobs[i];
 
         cout << "process " << j << endl;
+
+        incPathStack.clear();
+        incPathHistory.clear();
 
         Result r = processJob(j);
         pr += r;

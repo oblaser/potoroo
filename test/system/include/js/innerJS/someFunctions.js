@@ -14,7 +14,7 @@ copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 function func1()
 {
-    //#p rmn 2                  also test warnings in included file
+    //#p rmn 2
     alert('someFunctions.js not preprocessed!');
 
     return 'this was func1 and ' + a_func();
