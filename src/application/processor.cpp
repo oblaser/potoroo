@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           07.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -28,6 +28,7 @@ namespace
     const string keyWord_rmEnd = "endrm";
     const string keyWord_rmn = "rmn";
     const string keyWord_ins = "ins";
+    const string keyWord_include = "include";
 
     enum class KeyWord
     {
@@ -36,7 +37,8 @@ namespace
         rmStart,
         rmEnd,
         rmn,
-        ins
+        ins,
+        include
     };
 
     struct ProcPos
@@ -67,6 +69,10 @@ namespace
     void printDbg(const std::string& file, const std::string& text, size_t line = 0, size_t col = 0)
     {
         printEWI(file, text, line, col, -1, 1);
+    }
+    void printDbg(const std::string& file, const std::string& text, ProcPos procPos)
+    {
+        printDbg(file, text, procPos.ln, procPos.col);
     }
 #endif
 
@@ -102,11 +108,20 @@ namespace
         if (kwStr.compare(keyWord_rmEnd) == 0) kw = KeyWord::rmEnd;
         if (kwStr.compare(keyWord_rmn) == 0)  kw = KeyWord::rmn;
         if (kwStr.compare(keyWord_ins) == 0) kw = KeyWord::ins;
+        if (kwStr.compare(keyWord_include) == 0) kw = KeyWord::include;
         //if (kwStr.compare(keyWord_) == 0) kw = KeyWord::;
 
         return kw;
     }
 
+    char getCloseingIncPathChar(char openingChar)
+    {
+        //if (openingChar == '\"') return '\"';     future use
+        //if (openingChar == '<') return '>';       future use
+        if (openingChar == '[') return ']';
+
+        return 0;
+    }
 
 
 
@@ -358,6 +373,60 @@ namespace
                                 {
                                     ++p; // skip the space
                                     ++pPos.col;
+                                }
+                            }
+                            else if (kw == KeyWord::include)
+                            {
+                                skipThisLine = true;
+
+                                // skip space
+                                while ((p < pMax) && isSpace(p))
+                                {
+                                    ++p;
+                                    ++pPos.col;
+                                }
+
+                                const size_t pathCol = pPos.col;
+
+                                if (p >= pMax)
+                                {
+                                    ++r.err;
+                                    printError(ewiFile, "###missing argument of @include@", pPos.ln, pPos.col);
+                                }
+                                else
+                                {
+                                    // get path type
+                                    char pathType = *p;
+                                    char pathTypeCloseing = getCloseingIncPathChar(pathType);
+                                    ++p;
+                                    ++pPos.col;
+
+                                    if (pathTypeCloseing == 0)
+                                    {
+                                        ++r.err;
+                                        printError(ewiFile, "invalid path type", pPos.ln, pPos.col);
+                                    }
+                                    else
+                                    {
+                                        // get path
+                                        string pathStr = "";
+                                        while ((p < pMax) && ((*p != pathTypeCloseing) || (*(p - 1) == '\\'))) // p-1 is a valid pointer at this position, because there is allway a tag before p.
+                                        {
+                                            pathStr += *p;
+                                            ++p;
+                                            ++pPos.col;
+                                        }
+                                        char replace[] = { '\\', pathTypeCloseing ,0 };
+                                        char replaceWith[] = { pathTypeCloseing ,0 };
+                                        strReplaceAll(pathStr, replace, replaceWith);
+
+
+                                        string incTypeDispStr = "?";
+                                        if (pathType == '\"') incTypeDispStr = "relative to file";
+                                        else if (pathType == '<') incTypeDispStr = "relative to path in potoroo config";
+                                        else if (pathType == '[') incTypeDispStr = "relative to file (no preProc, dirty include)";
+                                        printDbg(ewiFile, "###include path: \"" + pathStr + "\" => \"" + fs::path(pathStr).relative_path().string() + "\" - " + incTypeDispStr, pPos);
+                                    }
                                 }
                             }
                             else

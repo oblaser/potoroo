@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           02.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -10,6 +10,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <string>
 
 #include "cliTextFormat.h"
 
@@ -409,4 +410,25 @@ int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding
     ofs.close();
 
     return result;
+}
+
+
+
+void strReplaceAll(std::string& str, const std::string& from, const std::string& to)
+{
+    size_t pos = 0;
+
+    if (from.empty()) return;
+
+    while (1)
+    {
+        pos = str.find(from, pos);
+
+        if (pos == std::string::npos) break;
+        else
+        {
+            str.replace(pos, from.length(), to);
+            pos += to.length();
+        }
+    }
 }
