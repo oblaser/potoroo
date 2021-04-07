@@ -12,7 +12,7 @@ See [processor test potorooJobs](./test/system/processor/potorooJobs) and [proce
 
 ```
 potoroo [-jf FILE] [--force-jf]
-potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [options]
+potoroo -if FILE (-od DIR | -of FILE) [options]
 ```
 
 | arg | description |
@@ -23,14 +23,12 @@ potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [options]
 | `-of FILE` | Output file |
 | `-od DIR` | Output directory (same filename) |
 | `-t TAG` | Specify the tag |
-
-| option | description |
-|:---|:---|
 | `-Werror` | Handles warnings as errors (only in processor, the jobfile parser is unaffected by this option). Results in not writing the output file if any warning occured. |
+| `-Wsup LIST` | Suppresses the reporting of the specified warnings. LIST is a comma separated (no spaces) list of integer warning IDs. (Only in processor, the jobfile parser is unaffected by this option. May be useful in combination with `-Werror`) |
 | `--copy` | Copy, replaces the existing file only if it is older than the input file |
 | `--copy-ow` | Copy, overwrites the existing file |
 
-If no parameter or only `--force-jf` is provided the default jobfile `./potorooJobs` is processed.
+The default jobfile `./potorooJobs` is processed, if no FILE argument is passed.
 
 
 ## jobfile
@@ -55,45 +53,31 @@ Each line is interpreted as a job. Paths in the jobfile are relative to its cont
 
 
 ## preprocessor key words
-#### rm
+### include
+Replaces the instruction line with the content of the specified file. The path is either absolute or relative to the current file.
 ```
-//#p rm
-deletes lines in between
-these tags and
-the tags themselves
-//#p endrm
+//#p include "js/code.js"
+//#p include 'js/moreCode.js'
 ```
+If included with single quotes, the file is not preprocessed.
 
-#### rmn
-```
-//#p rmn n
-```
-Deletes n lines after this tag and the tag itself. n = 1..9
-
-#### ins
+### ins
+Removes the instruction, wich results in adding a single line of code.
 ```
 //#p ins c = Math.sqrt(a*a + b*b);
 ```
-Removes the tag wich results in adding a single line of code.
 
+### rm
+The instruction lines and all lines between them are deleted.
+```
+//#p rm
+code to be
+deleted
+//#p endrm
+```
 
----
-
-## License
-
-GNU GPL v3
-
-Copyright (C) 2021  Oliver Blaser
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+### rmn
+Deletes the instruction line and the n following lines. (n = 1..9)
+```
+//#p rmn n
+```

@@ -1,9 +1,18 @@
 #
 # author        Oliver Blaser
-# date          04.03.2021
+# date          07.04.2021
 # copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 #
 
+
+
+#
+# suppressed warnings
+#
+
+-if index.html          -od 000_deploy          -t "custom:<!-- ptro"   -Wsup 106,107
+-if js/index.js         -od 000_deploy/js                              -Werror -Wsup 106,107
+#-if js/index.js         -od 000_deploy/js                               -Wsup 100,a10
 
 
 #
@@ -11,7 +20,6 @@
 #
 
 -if index.html          -od 000_deploy          -t "custom:<!-- ptro"
-#-if index.html          -od 000_deploy          -t "custom:<!-- ptro"   -Wsup 123,105,103       future feature
 -if js/index.js         -od 000_deploy/js
 #-if js/index.js         -od 000_deploy/js       -Werror
 -if js/jQuery.js        -od 000_deploy/js       --copy

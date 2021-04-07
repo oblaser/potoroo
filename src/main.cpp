@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           07.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -49,27 +49,24 @@ namespace
 
         cout << "Usage:" << endl;
         cout << "  potoroo [-jf FILE] [--force-jf]" << endl;
-        cout << "  potoroo -if FILE (-od DIR | -of FILE) [-t TAG] [options]" << endl;
+        cout << "  potoroo -if FILE (-od DIR | -of FILE) [options]" << endl;
         cout << endl;
         cout << endl;
         cout << "Arguments:" << endl;
         cout << left << setw(lw) << "  " + argStr_jf + " FILE" << "specify a jobfile" << endl;
         cout << left << setw(lw) << "  " + argStr_forceJf << "force jobfile to be processed even if errors occured while parsing it" << endl;
-        cout << endl;
         cout << left << setw(lw) << "  " + argStr_if + " FILE" << "input file" << endl;
         cout << left << setw(lw) << "  " + argStr_of + " FILE" << "output file" << endl;
         cout << left << setw(lw) << "  " + argStr_od + " DIR" << "output directory (same filename)" << endl;
         cout << left << setw(lw) << "  " + argStr_tag + " TAG" << "specify the tag" << endl;
+        cout << left << setw(lw) << "  " + argStr_wError << "handles warnings as errors (in processor, the jobfile parser is unaffected)" << endl;
+        cout << left << setw(lw) << "  " + argStr_wSup+" LIST" << "suppresses the reporting of the specified warnings. LIST is a comma separated" << endl;
+        cout << left << setw(lw) << "  " << "list of integer warning IDs. (in processor, the jobfile parser is unaffected)" << endl;
+        cout << left << setw(lw) << "  " + argStr_copy << "copy, replaces the existing file only if it is older than the input file" << endl;
+        cout << left << setw(lw) << "  " + argStr_copyow << "copy, overwrites the existing file" << endl;
         cout << endl;
         cout << left << setw(lw) << "  " + argStr_help + ", " + argStr_help_alt << "prints this help text" << endl;
         cout << left << setw(lw) << "  " + argStr_version + ", " + argStr_version_alt << "prints version info" << endl;
-        cout << endl;
-        cout << endl;
-        cout << "Options:" << endl;
-        cout << left << setw(lw) << "  " + argStr_wError << "handles warnings as errors (only in processor, the jobfile parser is unaffected" << endl;
-        cout << left << setw(lw) << "  " << "by this option). Results in not writing the output file if any warning occured" << endl;
-        cout << left << setw(lw) << "  " + argStr_copy << "copy, replaces the existing file only if it is older than the input file" << endl;
-        cout << left << setw(lw) << "  " + argStr_copyow << "copy, overwrites the existing file" << endl;
         cout << endl;
         cout << endl;
         cout << "TAG values:" << endl;
@@ -177,10 +174,10 @@ int main(int argc, char** argv)
 #ifdef _DEBUG_ECLIPSE
     a.setValue("../../test/system/processor/potorooJobs");
 #else
-    a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
+    //a.setValue("../../../test/system/stressTest_jobfileParser.potorooJobs");
     //a.setValue("../../../test/system/lineEndings/potorooJobs");
-    a.setValue("../../../test/system/include/potorooJobs");
-    //a.setValue("../../../test/system/processor/potorooJobs");
+    //a.setValue("../../../test/system/include/potorooJobs");
+    a.setValue("../../../test/system/processor/potorooJobs");
 #endif
     args.add(a);
 #endif

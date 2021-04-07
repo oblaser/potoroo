@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           01.03.2021
+\date           06.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -23,6 +23,7 @@ namespace potoroo
     const std::string argStr_tag = "-t";
     const std::string argStr_forceJf = "--force-jf";
     const std::string argStr_wError = "-Werror";
+    const std::string argStr_wSup = "-Wsup";
     const std::string argStr_copy = "--copy";
     const std::string argStr_copyow = "--copy-ow";
     const std::string argStr_help = "-h";
@@ -43,6 +44,7 @@ namespace potoroo
         tag,
         forceJf,
         wError,
+        wSup,
         copy,
         copyow
     };
@@ -105,6 +107,8 @@ namespace potoroo
         static ArgList parse(int argc, const char* const* argv);
         static ArgList parse(const char* args);
     };
+
+    int wSupStrListToVector(std::vector<int>& list, const std::string& strList);
 
     ArgProcResult argProc(ArgList& args);
     ArgProcResult argProcJF(const ArgList& args, std::string& errMsg);

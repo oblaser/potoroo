@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           07.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -38,6 +38,26 @@ namespace
     const char incPathType_dirty_Char = '\'';
     const char incPathType_dirty_CloseingChar = '\'';
 
+    enum WARNING_ID : int
+    {
+        /* 0..99 reserved */
+
+        _wID_first = 100,
+
+        wID_rmOut_file,
+        wID_rmOut_dir,
+        wID_include_emptyFile, // r += warn(ewiFile, wID_, job, , ProcPos());
+        wID_include_multiInc,
+        wID_include_loop,
+        wID_tagInRMx,
+        wID_instrLineEnd,
+        wID_rmnEOF,
+        wID_endlAssumeLF,
+        wID_convEndlFail,
+
+        _wID_last
+    };
+
     enum class KeyWord
     {
         unknown,
@@ -52,6 +72,7 @@ namespace
     struct ProcPos
     {
         ProcPos() : ln(0), col(0) {}
+        ProcPos(size_t line) : ln(line), col(0) {}
         ProcPos(size_t line, size_t column) : ln(line), col(column) {}
 
         size_t ln;
@@ -120,7 +141,7 @@ namespace
     {
         printEWI(file, text, line, col, 0, 1);
     }
-    void printError(const std::string& file, const std::string& text, ProcPos procPos)
+    void printError(const std::string& file, const std::string& text, const ProcPos& procPos)
     {
         printError(file, text, procPos.ln, procPos.col);
     }
@@ -129,7 +150,7 @@ namespace
     {
         printEWI(file, text, line, col, 1, 1);
     }
-    void printWarning(const std::string& file, const std::string& text, ProcPos procPos)
+    void printWarning(const std::string& file, const std::string& text, const ProcPos& procPos)
     {
         printWarning(file, text, procPos.ln, procPos.col);
     }
@@ -138,7 +159,7 @@ namespace
     {
         printEWI(file, text, line, col, 2, 1);
     }
-    void printInfo(const std::string& file, const std::string& text, ProcPos procPos)
+    void printInfo(const std::string& file, const std::string& text, const ProcPos& procPos)
     {
         printInfo(file, text, procPos.ln, procPos.col);
     }
@@ -148,11 +169,24 @@ namespace
     {
         printEWI(file, text, line, col, -1, 1);
     }
-    void printDbg(const std::string& file, const std::string& text, ProcPos procPos)
+    void printDbg(const std::string& file, const std::string& text, const ProcPos& procPos)
     {
         printDbg(file, text, procPos.ln, procPos.col);
     }
 #endif
+
+    Result warn(const std::string& file, int wID, const Job& job, const std::string& msg, const ProcPos& procPos = ProcPos(0, 0))
+    {
+        Result r;
+
+        if (!vectorContains(job.getWSupList(), wID))
+        {
+            ++r.warn;
+            printWarning(file, msg + " [" + to_string(wID) + "]", procPos);
+        }
+
+        return r;
+    }
 
     //! @brief Checks if *p is space
     bool isSpace(const char* p)
@@ -192,7 +226,7 @@ namespace
         return kw;
     }
 
-    Result rmOut(const fs::path& outf, const string& ewiFile, bool dir) noexcept
+    Result rmOut(const fs::path& outf, const string& ewiFile, const Job& job, bool dir) noexcept
     {
         Result r;
 
@@ -201,18 +235,15 @@ namespace
         try { fs::remove(outf); }
         catch (fs::filesystem_error& ex)
         {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg + ": " + ex.what());
+            r += warn(ewiFile, wID_rmOut_file, job, rmFileErrorMsg + ": " + ex.what());
         }
         catch (exception& ex)
         {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg + ":\n" + ex.what());
+            r += warn(ewiFile, wID_rmOut_file, job, rmFileErrorMsg + ":\n" + ex.what());
         }
         catch (...)
         {
-            ++r.warn;
-            printWarning(ewiFile, rmFileErrorMsg);
+            r += warn(ewiFile, wID_rmOut_file, job, rmFileErrorMsg);
         }
 
         if (dir)
@@ -222,18 +253,15 @@ namespace
             try { fs::remove(outf.parent_path()); }
             catch (fs::filesystem_error& ex)
             {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg + ": " + ex.what());
+                r += warn(ewiFile, wID_rmOut_dir, job, rmDirErrorMsg + ": " + ex.what());
             }
             catch (exception& ex)
             {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg + ":\n" + ex.what());
+                r += warn(ewiFile, wID_rmOut_dir, job, rmDirErrorMsg + ":\n" + ex.what());
             }
             catch (...)
             {
-                ++r.warn;
-                printWarning(ewiFile, rmDirErrorMsg);
+                r += warn(ewiFile, wID_rmOut_dir, job, rmDirErrorMsg);
             }
         }
 
@@ -249,7 +277,7 @@ namespace
         return 0;
     }
 
-    Result includeDirty(ofstream& outFileStream, const fs::path& incFile, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
+    Result includeDirty(ofstream& outFileStream, const Job& job, const fs::path& incFile, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
     {
         Result r;
 
@@ -262,8 +290,7 @@ namespace
 
         if (!ifs.good())
         {
-            ++r.warn;
-            printWarning(ewiFile, "empty include file", pPos.ln, pathCol);
+            r += warn(ewiFile, wID_include_emptyFile, job, "empty include file", ProcPos(pPos.ln, pathCol));
         }
 
         while (ifs.good())
@@ -309,8 +336,8 @@ namespace
 
             if ((recoursiveResult.err == 0) && (cwdr == 0))
             {
-                r += includeDirty(ofs, incOutf, ewiFile, pPos, pathCol);
-                r += rmOut(incOutf, ewiFile, true);
+                r += includeDirty(ofs, job, incOutf, ewiFile, pPos, pathCol);
+                r += rmOut(incOutf, ewiFile, job, true);
             }
         }
 
@@ -500,8 +527,7 @@ namespace
 
                         if ((proc_rm && (kw != KeyWord::rmEnd)) || proc_rmn)
                         {
-                            ++r.warn;
-                            printWarning(ewiFile, "###tags inside @rm@ or @rmn@ scopes are ignored", pPos.ln, tagCol);
+                            r += warn(ewiFile, wID_tagInRMx, job, "###tags inside @rm@ or @rmn@ scopes are ignored", ProcPos(pPos.ln, tagCol));
                         }
                         else
                         {
@@ -643,14 +669,13 @@ namespace
 
                                                     if (incPathHistory.contains(incPath))
                                                     {
-                                                        ++r.warn;
-                                                        printWarning(ewiFile, "included same file multiple times", pPos.ln, pathCol);
+                                                        r += warn(ewiFile, wID_include_multiInc, job, "included same file multiple times", ProcPos(pPos.ln, pathCol));
                                                     }
 
                                                     incPathHistory.push(incPath);
 
                                                     if (pathTypeChar == incPathType_rel_Char) r += includeRel(ofs, incPath, outf, job, ewiFile, pPos, pathCol);
-                                                    else if (pathTypeChar == incPathType_dirty_Char) r += includeDirty(ofs, incPath, ewiFile, pPos, pathCol);
+                                                    else if (pathTypeChar == incPathType_dirty_Char) r += includeDirty(ofs, job, incPath, ewiFile, pPos, pathCol);
                                                     else
                                                     {
                                                         ++r.err;
@@ -691,8 +716,7 @@ namespace
                             {
                                 if ((kw != KeyWord::ins) && !isNewLine(p))
                                 {
-                                    ++r.warn;
-                                    printWarning(ewiFile, "no new line after expression", pPos.ln, pPos.col);
+                                    r += warn(ewiFile, wID_instrLineEnd, job, "no new line after expression", pPos);
                                 }
                             }
                         }
@@ -748,8 +772,7 @@ namespace
 
         if (proc_rmn)
         {
-            ++r.warn;
-            printWarning(ewiFile, "###@rmn@ overlapped EOF", pPos.ln, pPos.col);
+            r += warn(ewiFile, wID_rmnEOF, job, "###@rmn@ overlapped EOF", pPos);
         }
 
         ifs.close();
@@ -807,8 +830,7 @@ Result potoroo::processJob(const Job& job) noexcept
 
                 if (ile == lineEnding::error)
                 {
-                    ++r.warn;
-                    printWarning(ewiFile, "Unable to determine line ending, assuming LF");
+                    r += warn(ewiFile, wID_endlAssumeLF, job, "Unable to determine line ending, assuming LF");
                     ile = lineEnding::LF;
                 }
 
@@ -833,9 +855,7 @@ Result potoroo::processJob(const Job& job) noexcept
                             if (convertLineEnding(outfLF, lineEnding::LF, outf, ile, errMsg) != 0)
                             {
                                 deleteTmpProcDir = false;
-
-                                ++r.warn;
-                                printWarning("convert line ending", errMsg);
+                                r += warn("convert line ending", wID_convEndlFail, job, errMsg);
                             }
                         }
                     }
@@ -894,7 +914,7 @@ Result potoroo::processJob(const Job& job) noexcept
         printError(ewiFile, "###[@Werror@] " + to_string(r.warn) + " warnings");
     }
 
-    if (r.err > 0) r += rmOut(outf, ewiFile, createdOutDir);
+    if (r.err > 0) r += rmOut(outf, ewiFile, job, createdOutDir);
 
     return r;
 }

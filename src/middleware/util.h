@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           07.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "project.h"
 
@@ -74,6 +75,8 @@ int convertLineEnding(const std::filesystem::path& inf, const std::filesystem::p
 int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding);
 int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding, const std::filesystem::path& outf, lineEnding outfLineEnding, std::string& errMsg);
 
-void strReplaceAll(std::string& str, const std::string& from, const std::string& to);
+size_t strReplaceAll(std::string& str, const std::string& from, const std::string& to);
+
+bool vectorContains(const std::vector<int>& vec, int value);
 
 #endif // _UTIL_H_
