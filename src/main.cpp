@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           07.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -59,10 +59,9 @@ namespace
         cout << left << setw(lw) << "  " + argStr_of + " FILE" << "output file" << endl;
         cout << left << setw(lw) << "  " + argStr_od + " DIR" << "output directory (same filename)" << endl;
         cout << left << setw(lw) << "  " + argStr_tag + " TAG" << "specify the tag" << endl;
-        cout << left << setw(lw) << "  " + argStr_wError << "handles warnings as errors (only in processor, the jobfile parser is unaffected" << endl;
-        cout << left << setw(lw) << "  " << "by this option). Results in not writing the output file if any warning occured" << endl;
-        cout << left << setw(lw) << "  " + argStr_wSup+" LIST" << "Suppresses the reporting of the specified warnings. LIST is a comma separated" << endl;
-        cout << left << setw(lw) << "  " << "list of integer warning IDs." << endl;
+        cout << left << setw(lw) << "  " + argStr_wError << "handles warnings as errors (in processor, the jobfile parser is unaffected)" << endl;
+        cout << left << setw(lw) << "  " + argStr_wSup+" LIST" << "suppresses the reporting of the specified warnings. LIST is a comma separated" << endl;
+        cout << left << setw(lw) << "  " << "list of integer warning IDs. (in processor, the jobfile parser is unaffected)" << endl;
         cout << left << setw(lw) << "  " + argStr_copy << "copy, replaces the existing file only if it is older than the input file" << endl;
         cout << left << setw(lw) << "  " + argStr_copyow << "copy, overwrites the existing file" << endl;
         cout << endl;

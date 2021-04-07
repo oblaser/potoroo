@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           07.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include "cliTextFormat.h"
 
@@ -419,11 +420,12 @@ int convertLineEnding(const std::filesystem::path& inf, lineEnding infLineEnding
 
 
 
-void strReplaceAll(std::string& str, const std::string& from, const std::string& to)
+size_t strReplaceAll(std::string& str, const std::string& from, const std::string& to)
 {
+    size_t cnt = 0;
     size_t pos = 0;
 
-    if (from.empty()) return;
+    if (from.empty()) return 0;
 
     while (1)
     {
@@ -434,6 +436,19 @@ void strReplaceAll(std::string& str, const std::string& from, const std::string&
         {
             str.replace(pos, from.length(), to);
             pos += to.length();
+            ++cnt;
         }
     }
+
+    return cnt;
+}
+
+bool vectorContains(const std::vector<int>& vec, int value)
+{
+    for (size_t i = 0; i < vec.size(); ++i)
+    {
+        if (vec[i] == value) return true;
+    }
+
+    return false;
 }

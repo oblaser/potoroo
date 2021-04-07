@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           07.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -457,6 +457,7 @@ std::ostream& potoroo::operator<<(std::ostream& os, const Job& j)
     else os << " #invalid job mode#";
 
     if (j.warningAsError()) os << " Werror";
+    if (j.getWSupList().size() > 0) os << " Wsup "+j.wSupListToString();
 
     return os;
 }
