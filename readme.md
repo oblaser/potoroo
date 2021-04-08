@@ -53,7 +53,7 @@ Each line is interpreted as a job. Paths in the jobfile are relative to its cont
 
 
 ## preprocessor key words
-### include
+### include (since v0.2.0)
 Replaces the instruction line with the content of the specified file. The path is either absolute or relative to the current file.
 ```
 //#p include "js/code.js"

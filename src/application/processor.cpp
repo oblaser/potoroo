@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           07.04.2021
+\date           08.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -652,7 +652,8 @@ namespace
 
                                             if (incPath.is_relative())
                                             {
-                                                incPath = inf.parent_path() / pathStr;
+                                                // incPath = inf.parent_path() / pathStr;   <== not good, because if the input file had to bee converted to LF, than the inf path is a temporary location.
+                                                incPath = fs::absolute(job.getInputFile()).parent_path() / pathStr;
                                             }
 #if PRJ_DEBUG && 0
                                             string incTypeDispStr = "?";
