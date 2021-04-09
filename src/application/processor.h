@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           08.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -18,9 +18,10 @@
 namespace potoroo
 {
     const std::string processorTmpDirIncOut = "potorooTempIncProcOut";
+    const std::string processorTmpDIncLineEnding = "potorooTempDIncLineEnding"; // temporary dir for dirty include line ending conversion
     const std::string processorTmpDirLineEnding = "potorooTempLineEnding";
 
-    Result processJob(const Job& job) noexcept;
+    Result processJob(const Job& job, bool forceOutfLineEndLF = false) noexcept;
     Result processJobs(const std::vector<Job>& jobs, std::vector<bool>& success) noexcept;
 }
 

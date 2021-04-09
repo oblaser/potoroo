@@ -277,7 +277,7 @@ namespace
         return 0;
     }
 
-    Result includeDirty(ofstream& outFileStream, const Job& job, const fs::path& incFile, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
+    Result includeDirtyProc(ofstream& outFileStream, const fs::path& incFile, const Job& job, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
     {
         Result r;
 
@@ -297,6 +297,47 @@ namespace
         {
             ofs.put(c);
             c = static_cast<char>(ifs.get());
+        }
+
+        return r;
+    }
+
+    Result includeDirty(ofstream& outFileStream, const fs::path& incFile, const fs::path& outf, const Job& job, const string& ewiFile, const ProcPos& pPos, size_t pathCol)
+    {
+        Result r;
+
+        lineEnding ile = detectLineEnding(incFile);
+
+        if (ile == lineEnding::error)
+        {
+            r += warn(ewiFile, wID_endlAssumeLF, job, "Unable to determine line ending, assuming LF");
+            ile = lineEnding::LF;
+        }
+
+        if (ile == lineEnding::LF) r += includeDirtyProc(outFileStream, incFile, job, ewiFile, pPos, pathCol);
+        else
+        {
+            const fs::path tmpProcDir(outf.parent_path() / processorTmpDirLineEnding);
+            const fs::path incfLF(tmpProcDir / (incFile.filename().string() + ".incfLF"));
+
+            fs::create_directories(tmpProcDir);
+
+            string errMsg;
+            bool deleteTmpProcDir = true;
+
+            if (convertLineEnding(incFile, ile, incfLF, lineEnding::LF, errMsg) == 0)
+            {
+                r += includeDirtyProc(outFileStream, incfLF, job, ewiFile, pPos, pathCol);
+
+                if (r.err != 0) deleteTmpProcDir = false;
+            }
+            else
+            {
+                ++r.err;
+                printError(ewiFile, "convert line ending of include file failed" + (errMsg.length() > 0 ? (" - " + errMsg) : ""), ProcPos(pPos.ln, pathCol));
+            }
+
+            if (deleteTmpProcDir) fs::remove_all(tmpProcDir);
         }
 
         return r;
@@ -324,7 +365,7 @@ namespace
         }
         else
         {
-            Result recoursiveResult = processJob(tmpJob);
+            Result recoursiveResult = processJob(tmpJob, true);
             r += recoursiveResult;
 
             cwdr = changeWD(currentWD, &cwdExWhat);
@@ -336,7 +377,7 @@ namespace
 
             if ((recoursiveResult.err == 0) && (cwdr == 0))
             {
-                r += includeDirty(ofs, job, incOutf, ewiFile, pPos, pathCol);
+                r += includeDirty(ofs, incOutf, outf, job, ewiFile, pPos, pathCol);
                 r += rmOut(incOutf, ewiFile, job, true);
             }
         }
@@ -652,7 +693,6 @@ namespace
 
                                             if (incPath.is_relative())
                                             {
-                                                // incPath = inf.parent_path() / pathStr;   <== not good, because if the input file had to bee converted to LF, than the inf path is a temporary location.
                                                 incPath = fs::absolute(job.getInputFile()).parent_path() / pathStr;
                                             }
 #if PRJ_DEBUG && 0
@@ -676,7 +716,7 @@ namespace
                                                     incPathHistory.push(incPath);
 
                                                     if (pathTypeChar == incPathType_rel_Char) r += includeRel(ofs, incPath, outf, job, ewiFile, pPos, pathCol);
-                                                    else if (pathTypeChar == incPathType_dirty_Char) r += includeDirty(ofs, job, incPath, ewiFile, pPos, pathCol);
+                                                    else if (pathTypeChar == incPathType_dirty_Char) r += includeDirty(ofs, incPath, outf, job, ewiFile, pPos, pathCol);
                                                     else
                                                     {
                                                         ++r.err;
@@ -783,7 +823,7 @@ namespace
     }
 }
 
-Result potoroo::processJob(const Job& job) noexcept
+Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
 {
     Result r;
     fs::path inf;
@@ -838,9 +878,12 @@ Result potoroo::processJob(const Job& job) noexcept
                 if (ile == lineEnding::LF) r += caterpillarProc(inf, outf, job, ewiFile);
                 else
                 {
-                    fs::path tmpProcDir(outf.parent_path() / processorTmpDirLineEnding);
-                    fs::path infLF(tmpProcDir / (inf.filename().string() + ".infLF"));
-                    fs::path outfLF(tmpProcDir / (outf.filename().string() + ".outfLF"));
+                    const fs::path tmpProcDir(outf.parent_path() / processorTmpDirLineEnding);
+                    const fs::path infLF(tmpProcDir / (inf.filename().string() + ".infLF"));
+                    fs::path outfLF;
+
+                    if (forceOutfLineEndLF) outfLF = fs::path(outf);
+                    else outfLF = fs::path(tmpProcDir / (outf.filename().string() + ".outfLF"));
 
                     fs::create_directories(tmpProcDir);
 
@@ -851,19 +894,19 @@ Result potoroo::processJob(const Job& job) noexcept
                     {
                         r += caterpillarProc(infLF, outfLF, job, ewiFile);
 
-                        if (r.err == 0)
+                        if ((r.err == 0) && !forceOutfLineEndLF)
                         {
                             if (convertLineEnding(outfLF, lineEnding::LF, outf, ile, errMsg) != 0)
                             {
                                 deleteTmpProcDir = false;
-                                r += warn("convert line ending", wID_convEndlFail, job, errMsg);
+                                r += warn(ewiFile, wID_convEndlFail, job, "convert line ending failed" + (errMsg.length() > 0 ? (" - " + errMsg) : ""));
                             }
                         }
                     }
                     else
                     {
                         ++r.err;
-                        printError("convert line ending", errMsg);
+                        printError(ewiFile, "convert line ending of include file failed" + (errMsg.length() > 0 ? (" - " + errMsg) : ""));
                     }
 
                     if (deleteTmpProcDir) fs::remove_all(tmpProcDir);
