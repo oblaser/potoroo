@@ -1,6 +1,6 @@
 #
 # author        Oliver Blaser
-# date          08.04.2021
+# date          28.04.2021
 # copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 #
 
@@ -32,6 +32,14 @@
 
 
 #
+# test --write-error-line option
+#
+
+-if js/index.js -of 000_deploy/jsERRLN/1.js  -Werror -Wsup 107,106 --write-error-line "// potoroo threw an error in this file"
+-if js/index.js                     -of 000_deploy/jsERRLN/2.js  -Werror -Wsup 107,106
+
+
+#
 # test behaviour on errors
 #
 
@@ -40,7 +48,9 @@
 #-if ./utf32BE.php       -od ./000_deploy
 #-if ./utf32LE.php       -od ./000_deploy
 
+#-if ./unknownExt.txt -od ./000_deploy
+
 # to test if the file does not get overwritten:
-#-if index.html          -od .                   -t cpp
+-if index.html          -od .                   -t cpp
 
 #-if bash.sh             -of 000_deploy/bash-customTag2.sh -t custom:#p

@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           07.04.2021
+\date           28.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -267,13 +267,17 @@ namespace
 
 
 potoroo::Job::Job()
-    : wError(false), validity(false), errorMsg("unset"), mode(JobMode::proc)
+    : wError(false), wrErrLn(false), wrErrLnStr("--write-error-line"), validity(false), errorMsg("unset"), mode(JobMode::proc)
 {
     setWSupList(nullptr, 0);
 }
 
-potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError, JobMode jobMode, const std::string* wSup)
-    : tag(tag), wError(warningAsError), validity(true), mode(jobMode)
+potoroo::Job::Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag,
+    bool warningAsError,
+    bool writeErrorLine, const std::string& writeErrorLineStr,
+    JobMode jobMode,
+    const std::string* wSup)
+    : tag(tag), wError(warningAsError), wrErrLn(writeErrorLine), wrErrLnStr(writeErrorLineStr), validity(true), mode(jobMode)
 {
     try { inFile = fs::path(inputFile).lexically_normal().string(); }
     catch (...) { inFile = string(inputFile); }
@@ -329,6 +333,16 @@ JobMode potoroo::Job::getMode() const
 bool potoroo::Job::warningAsError() const
 {
     return wError;
+}
+
+bool potoroo::Job::writeErrorLine() const
+{
+    return wrErrLn;
+}
+
+std::string potoroo::Job::writeErrorLineStr() const
+{
+    return wrErrLnStr;
 }
 
 const std::vector<int>& potoroo::Job::getWSupList() const
@@ -457,7 +471,8 @@ std::ostream& potoroo::operator<<(std::ostream& os, const Job& j)
     else os << " #invalid job mode#";
 
     if (j.warningAsError()) os << " Werror";
-    if (j.getWSupList().size() > 0) os << " Wsup "+j.wSupListToString();
+    if (j.getWSupList().size() > 0) os << " Wsup " + j.wSupListToString();
+    if (j.writeErrorLine()) os << " " << argStr_wrErrLn;
 
     return os;
 }
@@ -534,10 +549,10 @@ Result potoroo::Job::parseFile(const std::string& filename, std::vector<Job>& jo
             jobs.push_back(job);
         }
 #endif  
-    }
+        }
 
     return r;
-}
+    }
 
 Job potoroo::Job::parseArgs(const ArgList& args)
 {
@@ -605,7 +620,7 @@ Job potoroo::Job::parseArgs(const ArgList& args)
     string* wSupList = nullptr;
     if (args.get(ArgType::wSup).isValid()) wSupList = &tmpWSupList;
 
-    try { return Job(inPath.string(), out, tag, args.contains(ArgType::wError), mode, wSupList); }
+    try { return Job(inPath.string(), out, tag, args.contains(ArgType::wError), args.contains(ArgType::wrErrLn), args.get(ArgType::wrErrLn).getValue(), mode, wSupList); }
     catch (exception& ex) { return invalidInFilenameJob(in, ex.what()); }
     catch (...) { return invalidInFilenameJob(in, ""); }
 }

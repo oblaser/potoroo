@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           28.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -105,6 +105,7 @@ potoroo::Arg::Arg(const std::string& arg)
     else if (arg == argStr_wSup) type = ArgType::wSup;
     else if (arg == argStr_copy) type = ArgType::copy;
     else if (arg == argStr_copyow) type = ArgType::copyow;
+    else if (arg == argStr_wrErrLn) type = ArgType::wrErrLn;
     else if ((arg == argStr_help) || (arg == argStr_help_alt)) type = ArgType::help;
     else if ((arg == argStr_version) || (arg == argStr_version_alt)) type = ArgType::version;
     else type = ArgType::argType_invalid;

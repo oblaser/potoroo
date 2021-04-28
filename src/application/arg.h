@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           28.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -24,6 +24,7 @@ namespace potoroo
     const std::string argStr_forceJf = "--force-jf";
     const std::string argStr_wError = "-Werror";
     const std::string argStr_wSup = "-Wsup";
+    const std::string argStr_wrErrLn = "--write-error-line";
     const std::string argStr_copy = "--copy";
     const std::string argStr_copyow = "--copy-ow";
     const std::string argStr_help = "-h";
@@ -45,6 +46,7 @@ namespace potoroo
         forceJf,
         wError,
         wSup,
+        wrErrLn,
         copy,
         copyow
     };

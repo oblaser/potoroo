@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           08.04.2021
+\date           28.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "arg.h"
 #include "processor.h"
 #include "middleware/cliTextFormat.h"
 #include "middleware/util.h"
@@ -46,7 +47,7 @@ namespace
 
         wID_rmOut_file,
         wID_rmOut_dir,
-        wID_include_emptyFile, // r += warn(ewiFile, wID_, job, , ProcPos());
+        wID_include_emptyFile,
         wID_include_multiInc,
         wID_include_loop,
         wID_tagInRMx,
@@ -826,15 +827,17 @@ namespace
 Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
 {
     Result r;
-    fs::path inf;
-    fs::path outf;
+    fs::path inf_data;
+    fs::path outf_data;
+    const fs::path& inf = inf_data;
+    const fs::path& outf = outf_data;
     string ewiFile;
     bool createdOutDir = false;
 
     try
     {
-        inf = fs::absolute(job.getInputFile());
-        outf = fs::absolute(job.getOutputFile());
+        inf_data = fs::absolute(job.getInputFile());
+        outf_data = fs::absolute(job.getOutputFile());
     }
     catch (exception& ex)
     {
@@ -940,10 +943,6 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
         {
             ++r.err;
             printError(ewiFile, ex.what());
-
-#if PRJ_DEBUG
-            int ___dbg_breakpoint = 0;
-#endif
         }
         catch (...)
         {
@@ -958,7 +957,28 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
         printError(ewiFile, "###[@Werror@] " + to_string(r.warn) + " warnings");
     }
 
-    if (r.err > 0) r += rmOut(outf, ewiFile, job, createdOutDir);
+    if (r.err > 0)
+    {
+        if (job.writeErrorLine())
+        {
+            const string exMsg = "###[@" + argStr_wrErrLn + "@] could not write file";
+
+            try
+            {
+                ofstream ofs;
+                ofs.exceptions(ios::failbit | ios::badbit | ios::eofbit);
+                ofs.open(outf, ios::out | ios::binary);
+                string str = job.writeErrorLineStr();
+                ofs.write(str.c_str(), str.length());
+            }
+            catch (...)
+            {
+                ++r.err;
+                printError(ewiFile, exMsg);
+            }
+        }
+        else if(!fs::equivalent(inf, outf)) r += rmOut(outf, ewiFile, job, createdOutDir);
+    }
 
     return r;
 }
