@@ -41,6 +41,6 @@
 #-if ./utf32LE.php       -od ./000_deploy
 
 # to test if the file does not get overwritten:
-#-if index.html          -od .                   -t cpp
+-if index.html          -od .                   -t cpp
 
 #-if bash.sh             -of 000_deploy/bash-customTag2.sh -t custom:#p

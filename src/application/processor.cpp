@@ -826,15 +826,17 @@ namespace
 Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
 {
     Result r;
-    fs::path inf;
-    fs::path outf;
+    fs::path inf_data;
+    fs::path outf_data;
+    const fs::path& inf = inf_data;
+    const fs::path& outf = outf_data;
     string ewiFile;
     bool createdOutDir = false;
 
     try
     {
-        inf = fs::absolute(job.getInputFile());
-        outf = fs::absolute(job.getOutputFile());
+        inf_data = fs::absolute(job.getInputFile());
+        outf_data = fs::absolute(job.getOutputFile());
     }
     catch (exception& ex)
     {
@@ -958,7 +960,7 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
         printError(ewiFile, "###[@Werror@] " + to_string(r.warn) + " warnings");
     }
 
-    if (r.err > 0) r += rmOut(outf, ewiFile, job, createdOutDir);
+    if ((r.err > 0) && !fs::equivalent(inf, outf)) r += rmOut(outf, ewiFile, job, createdOutDir);
 
     return r;
 }
