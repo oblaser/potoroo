@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           06.04.2021
+\date           28.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -37,7 +37,11 @@ namespace potoroo
     {
     public:
         Job();
-        Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag, bool warningAsError = false, JobMode mode = JobMode::proc, const std::string* wSup = nullptr);
+        Job(const std::string& inputFile, const std::string& outputFile, const std::string& tag,
+            bool warningAsError = false,
+            bool writeErrorLine = false, const std::string& writeErrorLineStr = std::string("--write-error-line"),
+            JobMode mode = JobMode::proc,
+            const std::string* wSup = nullptr);
 
         void setValidity(bool validity);
         void setErrorMsg(const std::string& msg);
@@ -47,6 +51,8 @@ namespace potoroo
         std::string getTag() const;
         JobMode getMode() const;
         bool warningAsError() const;
+        bool writeErrorLine() const;
+        std::string writeErrorLineStr() const;
         const std::vector<int>& getWSupList() const;
 
         void setInputFile(const std::string& inputFile);
@@ -76,6 +82,8 @@ namespace potoroo
         std::string tag;
         JobMode mode;
         bool wError;
+        bool wrErrLn;
+        std::string wrErrLnStr;
         std::vector<int> wSupList;
 
         bool validity = false;

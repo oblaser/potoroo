@@ -1,7 +1,7 @@
 /*!
 
 \author         Oliver Blaser
-\date           07.04.2021
+\date           28.04.2021
 \copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
 
 */
@@ -60,8 +60,9 @@ namespace
         cout << left << setw(lw) << "  " + argStr_od + " DIR" << "output directory (same filename)" << endl;
         cout << left << setw(lw) << "  " + argStr_tag + " TAG" << "specify the tag" << endl;
         cout << left << setw(lw) << "  " + argStr_wError << "handles warnings as errors (in processor, the jobfile parser is unaffected)" << endl;
-        cout << left << setw(lw) << "  " + argStr_wSup+" LIST" << "suppresses the reporting of the specified warnings. LIST is a comma separated" << endl;
+        cout << left << setw(lw) << "  " + argStr_wSup + " LIST" << "suppresses the reporting of the specified warnings. LIST is a comma separated" << endl;
         cout << left << setw(lw) << "  " << "list of integer warning IDs. (in processor, the jobfile parser is unaffected)" << endl;
+        cout << left << setw(lw) << "  " + argStr_wrErrLn + " TEXT" << "     instead of deleting the output file on error, writes TEXT to it" << endl;
         cout << left << setw(lw) << "  " + argStr_copy << "copy, replaces the existing file only if it is older than the input file" << endl;
         cout << left << setw(lw) << "  " + argStr_copyow << "copy, overwrites the existing file" << endl;
         cout << endl;
@@ -74,6 +75,9 @@ namespace
         cout << left << setw(lwTag) << "  bash" << left << setw(lwTagStr) << tagBash << "for scripts with bash like comments" << endl;
         cout << left << setw(lwTag) << "  batch" << left << setw(lwTagStr) << tagBatch << "for batch scripts" << endl;
         cout << left << setw(lwTag) << "  custom:CT" << left << setw(lwTagStr) << "CT" << "to use a custom comment tag" << endl;
+        cout << endl;
+        cout << endl;
+        cout << "Website:" << endl << "  <https://github.com/oblaser/potoroo>" << endl;
         cout << endl;
     }
 

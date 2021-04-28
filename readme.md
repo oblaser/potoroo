@@ -25,6 +25,7 @@ potoroo -if FILE (-od DIR | -of FILE) [options]
 | `-t TAG` | Specify the tag |
 | `-Werror` | Handles warnings as errors (only in processor, the jobfile parser is unaffected by this option). Results in not writing the output file if any warning occured. |
 | `-Wsup LIST` | Suppresses the reporting of the specified warnings. LIST is a comma separated (no spaces) list of integer warning IDs. (Only in processor, the jobfile parser is unaffected by this option. May be useful in combination with `-Werror`) |
+| `--write-error-line TEXT` | Instead of deleting the output file on error, writes _TEXT_ to it |
 | `--copy` | Copy, replaces the existing file only if it is older than the input file |
 | `--copy-ow` | Copy, overwrites the existing file |
 
