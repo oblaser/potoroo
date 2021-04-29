@@ -26,11 +26,11 @@ using namespace potoroo;
 
 namespace
 {
-    const string keyWord_rmStart = "rm";
-    const string keyWord_rmEnd = "endrm";
-    const string keyWord_rmn = "rmn";
-    const string keyWord_ins = "ins";
-    const string keyWord_include = "include";
+    const string keyword_rmStart = "rm";
+    const string keyword_rmEnd = "endrm";
+    const string keyword_rmn = "rmn";
+    const string keyword_ins = "ins";
+    const string keyword_include = "include";
 
     //const char incPathType_path_Char = '<';
     //const char incPathType_path_CloseingChar = '>';
@@ -59,7 +59,7 @@ namespace
         _wID_last
     };
 
-    enum class KeyWord
+    enum class Keyword
     {
         unknown,
 
@@ -213,16 +213,16 @@ namespace
             );
     }
 
-    KeyWord getKW(const string& kwStr)
+    Keyword getKW(const string& kwStr)
     {
-        KeyWord kw = KeyWord::unknown;
+        Keyword kw = Keyword::unknown;
 
-        if (kwStr.compare(keyWord_rmStart) == 0) kw = KeyWord::rmStart;
-        if (kwStr.compare(keyWord_rmEnd) == 0) kw = KeyWord::rmEnd;
-        if (kwStr.compare(keyWord_rmn) == 0)  kw = KeyWord::rmn;
-        if (kwStr.compare(keyWord_ins) == 0) kw = KeyWord::ins;
-        if (kwStr.compare(keyWord_include) == 0) kw = KeyWord::include;
-        //if (kwStr.compare(keyWord_) == 0) kw = KeyWord::;
+        if (kwStr.compare(keyword_rmStart) == 0) kw = Keyword::rmStart;
+        if (kwStr.compare(keyword_rmEnd) == 0) kw = Keyword::rmEnd;
+        if (kwStr.compare(keyword_rmn) == 0)  kw = Keyword::rmn;
+        if (kwStr.compare(keyword_ins) == 0) kw = Keyword::ins;
+        if (kwStr.compare(keyword_include) == 0) kw = Keyword::include;
+        //if (kwStr.compare(keyord_) == 0) kw = Keyword::;
 
         return kw;
     }
@@ -564,22 +564,22 @@ namespace
                             ++pPos.col;
                         }
 
-                        KeyWord kw = getKW(kwStr);
+                        Keyword kw = getKW(kwStr);
 
 
-                        if ((proc_rm && (kw != KeyWord::rmEnd)) || proc_rmn)
+                        if ((proc_rm && (kw != Keyword::rmEnd)) || proc_rmn)
                         {
                             r += warn(ewiFile, wID_tagInRMx, job, "###tags inside @rm@ or @rmn@ scopes are ignored", ProcPos(pPos.ln, tagCol));
                         }
                         else
                         {
 
-                            // process key words
-                            if (kw == KeyWord::rmStart)
+                            // process keywords
+                            if (kw == Keyword::rmStart)
                             {
                                 proc_rm = true;
                             }
-                            else if (kw == KeyWord::rmEnd)
+                            else if (kw == Keyword::rmEnd)
                             {
                                 if (proc_rm)
                                 {
@@ -593,7 +593,7 @@ namespace
                                     printError(ewiFile, "###unexpected \"endrm\"", pPos.ln, kwCol);
                                 }
                             }
-                            else if (kw == KeyWord::rmn)
+                            else if (kw == Keyword::rmn)
                             {
                                 // skip space
                                 while ((p < pMax) && isSpace(p))
@@ -629,7 +629,7 @@ namespace
                                     printError(ewiFile, "###invalid argument of @rmn@: \"" + arg + "\"", pPos.ln, argCol);
                                 }
                             }
-                            else if (kw == KeyWord::ins)
+                            else if (kw == Keyword::ins)
                             {
                                 if (p < pMax)
                                 {
@@ -637,7 +637,7 @@ namespace
                                     ++pPos.col;
                                 }
                             }
-                            else if (kw == KeyWord::include)
+                            else if (kw == Keyword::include)
                             {
                                 skipThisLine = true;
 
@@ -749,14 +749,14 @@ namespace
                             else
                             {
                                 ++r.err;
-                                printError(ewiFile, "###unknown key word \"" + kwStr + "\"", pPos.ln, kwCol);
+                                printError(ewiFile, "###unknown keyword \"" + kwStr + "\"", pPos.ln, kwCol);
                             }
 
 
-                            // check if line is empty after key word
+                            // check if line is empty after keyword
                             if (p < pMax)
                             {
-                                if ((kw != KeyWord::ins) && !isNewLine(p))
+                                if ((kw != Keyword::ins) && !isNewLine(p))
                                 {
                                     r += warn(ewiFile, wID_instrLineEnd, job, "no new line after expression", pPos);
                                 }
