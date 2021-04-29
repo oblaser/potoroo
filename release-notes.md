@@ -1,5 +1,8 @@
 # Release Notes
 
+## next
+- escapeable double quotes in jobfile arguments ([commit](https://github.com/oblaser/potoroo/) this) ([example](https://github.com/oblaser/potoroo/tree/master/test/system/processor/potorooJobs) in jobfile line 38)
+
 ## 0.2.0 pre-release
 - New options: __-Wsup__ and __--write-error-line__
 - New processor keyword: __include__

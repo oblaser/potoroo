@@ -850,6 +850,8 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
         printError("", "invalid in or out filename");
     }
 
+    const lineEnding ile = detectLineEnding(inf);
+
     if (r.err == 0)
     {
         try { ewiFile = inf.filename().string(); }
@@ -870,15 +872,12 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
 
             if (job.getMode() == JobMode::proc)
             {
-                lineEnding ile = detectLineEnding(inf);
-
                 if (ile == lineEnding::error)
                 {
                     r += warn(ewiFile, wID_endlAssumeLF, job, "Unable to determine line ending, assuming LF");
-                    ile = lineEnding::LF;
                 }
 
-                if (ile == lineEnding::LF) r += caterpillarProc(inf, outf, job, ewiFile);
+                if ((ile == lineEnding::LF) || (ile == lineEnding::error)) r += caterpillarProc(inf, outf, job, ewiFile);
                 else
                 {
                     const fs::path tmpProcDir(outf.parent_path() / processorTmpDirLineEnding);
@@ -938,7 +937,7 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
                 ++r.err;
                 printError("processor", "invalid job mode");
             }
-        }
+            }
         catch (exception& ex)
         {
             ++r.err;
@@ -949,7 +948,7 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
             ++r.err;
             printError(ewiFile, "unknown");
         }
-    }
+        }
 
     if (job.warningAsError() && (r.warn > 0))
     {
@@ -968,7 +967,12 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
                 ofstream ofs;
                 ofs.exceptions(ios::failbit | ios::badbit | ios::eofbit);
                 ofs.open(outf, ios::out | ios::binary);
+
                 string str = job.writeErrorLineStr();
+
+                if ((ile == lineEnding::CR) || (ile == lineEnding::CRLF)) str += '\r';
+                if ((ile == lineEnding::CRLF) || (ile == lineEnding::LF) || (ile == lineEnding::error)) str += '\n';
+
                 ofs.write(str.c_str(), str.length());
             }
             catch (...)
@@ -977,11 +981,11 @@ Result potoroo::processJob(const Job& job, bool forceOutfLineEndLF) noexcept
                 printError(ewiFile, exMsg);
             }
         }
-        else if(!fs::equivalent(inf, outf)) r += rmOut(outf, ewiFile, job, createdOutDir);
+        else if (!fs::equivalent(inf, outf)) r += rmOut(outf, ewiFile, job, createdOutDir);
     }
 
     return r;
-}
+    }
 
 Result potoroo::processJobs(const std::vector<Job>& jobs, std::vector<bool>& success) noexcept
 {
@@ -998,7 +1002,7 @@ Result potoroo::processJobs(const std::vector<Job>& jobs, std::vector<bool>& suc
         else cout << "invalid: " << jobs[i].getErrorMsg();
 
         cout << endl;
-    }
+}
     cout << "===============" << endl;
 #endif
 

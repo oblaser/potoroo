@@ -310,9 +310,9 @@ ArgList potoroo::ArgList::parse(const char* args)
             vector<char> tmpVec;
 
             ++i;
-            while ((args[i] != '"') && (args[i] != 0))
+            while (((args[i] != '"') || (args[i - 1] == '\\')) && (args[i] != 0))
             {
-                tmpVec.push_back(args[i]);
+                if ((args[i] != '\\') || (args[i - 1] == '\\')) tmpVec.push_back(args[i]);
                 ++i;
             }
             if (args[i] == '"') ++i;
