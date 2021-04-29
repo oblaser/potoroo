@@ -1,12 +1,12 @@
 ﻿# potoroo
 
-A preprocessor for scripts or any other text file.
+A preprocessor and kind of a build system for scripts and any other text files.
 
 [VS Code integration](./vscode-integration.md)
 
 ## exapmles
 
-See [processor test potorooJobs](./test/system/processor/potorooJobs) and [processor test src](./test/system/processor)
+See [processor test potorooJobs](./test/system/processor/potorooJobs) and [processor test src](./test/system/processor) or the [jdhp](https://github.com/oblaser/json-defined-html-page) project.
 
 ## cli arguments
 
