@@ -13,13 +13,13 @@
 
 namespace project
 {
-    const Version version(0, 2, 0);
+    const Version version(0, 2, 1);
 }
 
 
 
 #define PRJ_VERSION (project::version)
-#define PRJ_VERSION_PRERELEASE (0)
+#define PRJ_VERSION_PRERELEASE (1)
 
 
 
