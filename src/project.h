@@ -19,7 +19,7 @@ namespace project
 
 
 #define PRJ_VERSION (project::version)
-#define PRJ_VERSION_PRERELEASE (1)
+#define PRJ_VERSION_PRERELEASE (0)
 
 
 
