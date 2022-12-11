@@ -2,7 +2,7 @@
 
 \author         Oliver Blaser
 \date           07.04.2021
-\copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
+\copyright      GNU GPLv3 - Copyright (c) 2022 Oliver Blaser
 
 */
 

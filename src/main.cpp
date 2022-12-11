@@ -2,7 +2,7 @@
 
 \author         Oliver Blaser
 \date           28.04.2021
-\copyright      GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
+\copyright      GNU GPLv3 - Copyright (c) 2022 Oliver Blaser
 
 */
 
@@ -106,7 +106,7 @@ namespace
         cout << endl << endl;
         cout << "project page: <https://github.com/oblaser/potoroo>" << endl;
         cout << endl;
-        cout << "Copyright (c) 2021 Oliver Blaser." << endl;
+        cout << "Copyright (c) 2022 Oliver Blaser." << endl;
         cout << "License: GNU GPLv3 <http://gnu.org/licenses/>." << endl;
         cout << "This is free software. There is NO WARRANTY." << endl;
     }

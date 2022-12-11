@@ -1,7 +1,7 @@
 #
 # author        Oliver Blaser
 # date          15.08.2022
-# copyright     GNU GPLv3 - Copyright (c) 2021 Oliver Blaser
+# copyright     GNU GPLv3 - Copyright (c) 2022 Oliver Blaser
 #
 
 cmake_minimum_required(VERSION 3.13)
